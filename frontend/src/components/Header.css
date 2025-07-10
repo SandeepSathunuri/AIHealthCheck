@@ -1,0 +1,39 @@
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.header-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.logo-icon {
+  font-size: 1.5rem;
+  transition: transform 0.3s ease;
+}
+
+.header-container:hover .logo-icon {
+  transform: scale(1.2);
+}
+
+.theme-toggle-icon {
+  transition: transform 0.3s ease;
+}
+
+.theme-toggle-icon:hover {
+  transform: scale(1.2);
+}
+
+.bounce {
+  animation: bounce 0.3s ease-in-out;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+}
