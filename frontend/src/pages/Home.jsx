@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Stack,
@@ -8,11 +8,9 @@ import {
   useMediaQuery,
   CssBaseline,
   styled,
-  IconButton,
 } from '@mui/material';
-import { FaCog, FaUser } from 'react-icons/fa';
 import useHomePageLogic from '../hooks/useHomePageLogic';
-import Header from '../components/Header';
+import Sidebar from '../components/Sidebar';
 import AudioRecorder from '../components/AudioRecorder';
 import ImageUploader from '../components/ImageUploader';
 import ResultsPanel from '../components/ResultsPanel';
@@ -51,23 +49,6 @@ const GlassPaper = styled(Paper)(({ theme }) => ({
   },
 }));
 
-const PulsingLogo = styled(Box)(({ theme }) => ({
-  position: 'absolute',
-  top: '10px',
-  left: '10px',
-  width: '40px',
-  height: '40px',
-  borderRadius: '50%',
-  background: 'linear-gradient(45deg, #00d4ff, #ff00ff)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  color: '#fff',
-  fontSize: '20px',
-  animation: 'pulse 1.5s infinite',
-  zIndex: 1000,
-}));
-
 const HomePage = () => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -101,10 +82,16 @@ const HomePage = () => {
       handleImageUpload,
       handleDrop,
       handleAnalyse,
-      toggleDarkMode,
+      toggleDarkMode: originalToggleDarkMode,
       handleRecapture,
     },
   } = useHomePageLogic();
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(!isSmallScreen);
+
+  const handleToggleDarkMode = () => {
+    originalToggleDarkMode();
+  };
 
   console.log('HomePage render, stream:', stream, 'updateTrigger:', updateTrigger, 'image:', image, 'imageUrl:', imageUrl);
   console.log('HomePage passing to ImageUploader, stream:', stream, 'updateTrigger:', updateTrigger, 'handleRecapture:', handleRecapture);
@@ -122,7 +109,6 @@ const HomePage = () => {
             ? 'linear-gradient(135deg, #0a0a1e, #1a1a3a)'
             : 'linear-gradient(135deg, #e6f0fa, #f0f4ff)',
           display: 'flex',
-          flexDirection: 'column',
           position: 'relative',
           '&::before': {
             content: '""',
@@ -136,121 +122,116 @@ const HomePage = () => {
           },
         }}
       >
-        <PulsingLogo>
-          <FaUser />
-        </PulsingLogo>
-        <IconButton
-          sx={{
-            position: 'absolute',
-            top: '10px',
-            right: '10px',
-            color: '#00d4ff',
-            '&:hover': { color: '#ff00ff' },
-          }}
-          aria-label="Settings"
-        >
-          <FaCog />
-        </IconButton>
-        <Header
+        <Sidebar
+          isOpen={isSidebarOpen}
+          setIsOpen={setIsSidebarOpen}
           isDarkMode={isDarkMode}
           handleLogout={handleLogout}
-          toggleDarkMode={toggleDarkMode}
-          sx={{ position: 'sticky', top: 0, zIndex: 1100, background: 'transparent' }}
+          toggleDarkMode={handleToggleDarkMode}
         />
-
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
+        <Box
           sx={{
             flex: 1,
-            width: '100%',
-            p: { xs: 1.5, sm: 2.5 },
-            alignItems: 'stretch',
-            zIndex: 1,
+            ml: isSidebarOpen ? '100px' : '50px', 
+            transition: 'margin-left 0.3s ease',
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: '100vh',
           }}
         >
-          {/* LEFT PANEL */}
-          <GlassPaper
-            sx={{
-              flex: 1.2,
-              p: { xs: 2.5, sm: 3.5 },
-              background: (theme) =>
-                theme.palette.mode === 'dark'
-                  ? 'rgba(10, 10, 30, 0.9)'
-                  : 'rgba(255, 255, 255, 0.3)',
-              m: 1.5,
-              position: 'relative',
-            }}
-          >
-            {loading && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 10,
-                  backdropFilter: 'blur(5px)',
-                }}
-              >
-                <CircularProgress sx={{ color: '#00d4ff' }} />
-              </Box>
-            )}
-            <Stack spacing={2.5}>
-              <AudioRecorder
-                isRecording={isRecording}
-                loading={loading}
-                startRecording={startRecording}
-                stopRecording={stopRecording}
-              />
-              <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.2)' }} />
-              <ImageUploader
-                key={stream?.id || 'camera-off'}
-                image={image}
-                imageUrl={imageUrl}
-                isCameraOpen={isCameraOpen}
-                fileInputRef={fileInputRef}
-                videoRef={videoRef}
-                canvasRef={canvasRef}
-                openCamera={openCamera}
-                closeCamera={closeCamera}
-                capturePhoto={capturePhoto}
-                handleImageUpload={handleImageUpload}
-                handleDrop={handleDrop}
-                handleAnalyse={handleAnalyse}
-                loading={loading}
-                audioBlob={audioBlob}
-                handleRecapture={handleRecapture} // Correct prop
-                stream={stream}
-                updateTrigger={updateTrigger}
-              />
-            </Stack>
-          </GlassPaper>
-
-          {/* RIGHT PANEL */}
-          <GlassPaper
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
             sx={{
               flex: 1,
-              p: { xs: 2.5, sm: 3.5 },
-              background: (theme) =>
-                theme.palette.mode === 'dark'
-                  ? 'rgba(10, 10, 30, 0.9)'
-                  : 'rgba(255, 255, 255, 0.3)',
-              m: 1.5,
+              width: '100%',
+              p: { xs: 1.5, sm: 2.5 },
+              alignItems: 'stretch',
+              zIndex: 1,
             }}
           >
-            <ResultsPanel
-              audioBlob={audioBlob}
-              doctorResponse={doctorResponse}
-              audioUrl={audioUrl}
-              imageUrl={imageUrl}
-            />
-          </GlassPaper>
-        </Stack>
+            {/* LEFT PANEL */}
+            <GlassPaper
+              sx={{
+                flex: 1.2,
+                p: { xs: 2.5, sm: 3.5 },
+                background: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(10, 10, 30, 0.9)'
+                    : 'rgba(255, 255, 255, 0.3)',
+                m: 1.5,
+                position: 'relative',
+              }}
+            >
+              {loading && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 10,
+                    backdropFilter: 'blur(5px)',
+                  }}
+                >
+                  <CircularProgress sx={{ color: '#00d4ff' }} />
+                </Box>
+              )}
+              <Stack spacing={2.5}>
+                <AudioRecorder
+                  isRecording={isRecording}
+                  loading={loading}
+                  startRecording={startRecording}
+                  stopRecording={stopRecording}
+                />
+                <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.2)' }} />
+                <ImageUploader
+                  key={stream?.id || 'camera-off'}
+                  image={image}
+                  imageUrl={imageUrl}
+                  isCameraOpen={isCameraOpen}
+                  fileInputRef={fileInputRef}
+                  videoRef={videoRef}
+                  canvasRef={canvasRef}
+                  openCamera={openCamera}
+                  closeCamera={closeCamera}
+                  capturePhoto={capturePhoto}
+                  handleImageUpload={handleImageUpload}
+                  handleDrop={handleDrop}
+                  handleAnalyse={handleAnalyse}
+                  loading={loading}
+                  audioBlob={audioBlob}
+                  handleRecapture={handleRecapture}
+                  stream={stream}
+                  updateTrigger={updateTrigger}
+                />
+              </Stack>
+            </GlassPaper>
+
+            {/* RIGHT PANEL */}
+            <GlassPaper
+              sx={{
+                flex: 1,
+                p: { xs: 2.5, sm: 3.5 },
+                background: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(10, 10, 30, 0.9)'
+                    : 'rgba(255, 255, 255, 0.3)',
+                m: 1.5,
+              }}
+            >
+              <ResultsPanel
+                audioBlob={audioBlob}
+                doctorResponse={doctorResponse}
+                audioUrl={audioUrl}
+              />
+            </GlassPaper>
+          </Stack>
+        </Box>
 
         <CameraDialog
           isCameraOpen={isCameraOpen}

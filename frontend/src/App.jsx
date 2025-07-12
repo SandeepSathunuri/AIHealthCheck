@@ -4,6 +4,7 @@ import './index.css';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Home from './pages/Home';
+import History from './pages/History';
 import { useState } from 'react';
 import RefrshHandler from '../RefrshHandler';
 
@@ -29,7 +30,9 @@ function App() {
             </PrivateRoute>
           }
         />
+        <Route path="/history" element={<History />} />
       </Routes>
+      
     </div>
   );
 }
