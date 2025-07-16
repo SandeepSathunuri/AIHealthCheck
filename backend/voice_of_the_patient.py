@@ -15,16 +15,16 @@ def record_audio(file_path, timeout=20, phrase_time_limit=None):
     Simplified function to record audio from the microphone and save it as an MP3 file.
 
     Args:
-    file_path (str): Path to save the recorded audio file.
-    timeout (int): Maximum time to wait for a phrase to start (in seconds).
-    phrase_time_limit (int): Maximum time for the phrase to be recorded (in seconds).
+        file_path (str): Path to save the recorded audio file.
+        timeout (int): Maximum time to wait for a phrase to start (in seconds).
+        phrase_time_limit (int): Maximum time for the phrase to be recorded (in seconds).
     """
     recognizer = sr.Recognizer()  # Creates an object to listen and understand audio.
     
     try:
         with sr.Microphone() as source:  # Use your default microphone as input source
             logging.info("Adjusting for ambient noise...")
-            recognizer.adjust_for_ambient_noise(source, duration=1)  # Mic lo surrounding noises ni ignore cheyyataniki adjust chestundi, for 1 second.
+            recognizer.adjust_for_ambient_noise(source, duration=1)  # Adjust for surrounding noise
             logging.info("Start speaking now...")
             
             # Record the audio
@@ -34,7 +34,7 @@ def record_audio(file_path, timeout=20, phrase_time_limit=None):
             # Convert the recorded audio to an MP3 file
             wav_data = audio_data.get_wav_data()
             audio_segment = AudioSegment.from_wav(BytesIO(wav_data))
-            audio_segment.export(file_path, format="mp3", bitrate="128k")  # Converts WAV → MP3 and saves it to the given file_path
+            audio_segment.export(file_path, format="mp3", bitrate="128k")  # Converts WAV → MP3
             
             logging.info(f"Audio saved to {file_path}")
 
@@ -50,15 +50,39 @@ from groq import Groq
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 stt_model = "whisper-large-v3"
 
-def transcribe_with_groq(GROQ_API_KEY, audio_filepath, stt_model="whisper-large-v3"):
+def transcribe_with_groq(GROQ_API_KEY, audio_bytes, stt_model="whisper-large-v3"):
+    """
+    Transcribes audio using Groq's Whisper model directly from bytes.
+
+    Args:
+        GROQ_API_KEY (str): Your Groq API key.
+        audio_bytes (bytes): Raw audio data.
+        stt_model (str): The Whisper model name (default: whisper-large-v3).
+
+    Returns:
+        str: Transcribed text.
+    """
     client = Groq(api_key=GROQ_API_KEY)
     
-    with open(audio_filepath, "rb") as audio_file:  # Use context manager to ensure file closes
+    # Use BytesIO to simulate a file from bytes
+    audio_file = BytesIO(audio_bytes)
+    audio_file.name = "audio.mp3"  # Required for Groq API
+    
+    try:
         transcription = client.audio.transcriptions.create(
             model=stt_model,
             file=audio_file,
             language="en"
         )
+        return transcription.text
+    except Exception as e:
+        logging.error(f"Transcription error: {e}")
+        return None
 
-    return transcription.text
-# print(transcribe_with_groq(GROQ_API_KEY, audio_filepath, stt_model))
+# Example usage (optional)
+if __name__ == "__main__":
+    # with open(audio_filepath, "rb") as f:
+    #     audio_bytes = f.read()
+    #     transcription = transcribe_with_groq(GROQ_API_KEY, audio_bytes, stt_model)
+    #     print("Transcription:", transcription)
+    pass

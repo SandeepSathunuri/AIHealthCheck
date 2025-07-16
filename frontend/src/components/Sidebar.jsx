@@ -1,6 +1,5 @@
-// components/Sidebar.jsx
 import React from 'react';
-import {useAuth} from '../context/AuthContext'
+import { useAuth } from '../context/AuthContext';
 import {
   Drawer,
   Box,
@@ -161,7 +160,7 @@ const Sidebar = ({ isOpen, setIsOpen, isDarkMode, toggleDarkMode, handleLogout }
             <Avatar sx={{ width: 30, height: 30 }} />
             {isOpen && (
               <Typography variant="body2" fontWeight={500}>
-                {user ||'Guest'}
+                {user || 'Guest'}
               </Typography>
             )}
           </Box>

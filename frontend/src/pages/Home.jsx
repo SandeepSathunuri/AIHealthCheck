@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Box,
   Stack,
@@ -18,6 +18,7 @@ import CameraDialog from '../components/CameraDialog';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { ToastContainer } from 'react-toastify';
 import { CircularProgress } from '@mui/material';
+import { useSidebar } from '../context/SidebarContext'; // Import context
 
 const GlassPaper = styled(Paper)(({ theme }) => ({
   position: 'relative',
@@ -58,6 +59,7 @@ const HomePage = () => {
       image,
       imageUrl,
       audioBlob,
+      transcriptionDisplay,
       doctorResponse,
       audioUrl,
       loading,
@@ -87,14 +89,12 @@ const HomePage = () => {
     },
   } = useHomePageLogic();
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(!isSmallScreen);
+  const { isSidebarOpen, setIsSidebarOpen } = useSidebar(); // Use context
+  console.log('HomePage render, isSidebarOpen:', isSidebarOpen); // Debug log
 
   const handleToggleDarkMode = () => {
     originalToggleDarkMode();
   };
-
-  console.log('HomePage render, stream:', stream, 'updateTrigger:', updateTrigger, 'image:', image, 'imageUrl:', imageUrl);
-  console.log('HomePage passing to ImageUploader, stream:', stream, 'updateTrigger:', updateTrigger, 'handleRecapture:', handleRecapture);
 
   return (
     <ErrorBoundary>
@@ -132,7 +132,7 @@ const HomePage = () => {
         <Box
           sx={{
             flex: 1,
-            ml: isSidebarOpen ? '100px' : '50px', 
+            ml: isSidebarOpen ? '100px' : '50px',
             transition: 'margin-left 0.3s ease',
             display: 'flex',
             flexDirection: 'column',
@@ -225,7 +225,7 @@ const HomePage = () => {
               }}
             >
               <ResultsPanel
-                audioBlob={audioBlob}
+                transcriptionDisplay={transcriptionDisplay}
                 doctorResponse={doctorResponse}
                 audioUrl={audioUrl}
               />

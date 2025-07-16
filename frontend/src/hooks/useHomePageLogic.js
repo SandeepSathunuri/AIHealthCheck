@@ -9,7 +9,8 @@ export default function useHomePageLogic() {
   const [loggedInUser, setLoggedInUser] = useState('');
   const [image, setImage] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
-  const [audioBlob, setAudioBlob] = useState(null);
+  const [audioBlob, setAudioBlob] = useState(null); // Remains Blob for API
+  const [transcriptionDisplay, setTranscriptionDisplay] = useState(''); // New state for rendering
   const [doctorResponse, setDoctorResponse] = useState('');
   const [audioUrl, setAudioUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -80,6 +81,7 @@ export default function useHomePageLogic() {
       mediaRecorder.onstop = () => {
         const blob = new Blob(audioChunksRef.current, { type: 'audio/mp3' });
         setAudioBlob(blob);
+        setTranscriptionDisplay('Audio recorded, awaiting analysis...'); // Placeholder
         handleSuccess('Recording saved');
       };
 
@@ -174,46 +176,58 @@ export default function useHomePageLogic() {
     setImageUrl(null);
   };
 
-const handleAnalyse = async () => {
-  console.log('handleAnalyse called');
-  if (!image || !audioBlob) {
-    handleError('Please upload an image and record audio first');
-    return;
-  }
+  const handleAnalyse = async () => {
+    console.log('handleAnalyse called');
+    if (!image || !audioBlob) {
+      handleError('Please upload an image and record audio first');
+      return;
+    }
 
-  setLoading(true);
-  setDoctorResponse('');
-  setAudioUrl('');
+    setLoading(true);
+    setDoctorResponse('');
+    setAudioUrl('');
+    setTranscriptionDisplay('Analyzing...'); // Update display during analysis
 
-  try {
-    const formData = new FormData();
-    formData.append('image', image);
-    formData.append('audio', audioBlob, 'voice.mp3');
+    try {
+      const formData = new FormData();
+      formData.append('image', image);
+      formData.append('audio', audioBlob, 'voice.mp3');
 
-    const token = localStorage.getItem('token');
-    console.log('Sending request with token:', token);
-    const response = await fetch('http://localhost:8080/medibot/process', {
-      method: 'POST',
-      body: formData,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+      const token = localStorage.getItem('token');
+      console.log('Sending request with token:', token);
+      const response = await fetch('http://localhost:8080/medibot/process', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    if (!response.ok) throw new Error(await response.text() || 'Analysis failed');
+      if (!response.ok) throw new Error(await response.text() || 'Analysis failed');
 
-    const result = await response.json();
-    console.log('Response received:', result);
-    setDoctorResponse(result.doctor_response);
-    setAudioUrl(result.audio_url);
-    handleSuccess('Analysis complete');
-  } catch (err) {
-    console.error('Analysis error:', err);
-    handleError(err.message || 'Analysis failed');
-  } finally {
-    setLoading(false);
-  }
-};
+      const result = await response.json();
+      console.log('Response received:', result);
+      setDoctorResponse(result.doctor_response);
+      setAudioUrl(result.audio_url);
+      setTranscriptionDisplay(result.transcription || 'Transcription available in audio'); // Use transcription from response
+      handleSuccess('Analysis complete');
+
+      // Trigger auto-play after state update
+      if (result.audio_url) {
+        const audio = new Audio(result.audio_url);
+        audio.play().catch(err => {
+          console.error('Auto-play failed:', err);
+          handleError('Auto-play blocked by browser. Use controls in ResultsPanel to play.');
+        });
+      }
+    } catch (err) {
+      console.error('Analysis error:', err);
+      handleError(err.message || 'Analysis failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   console.log('useHomePageLogic state returned:', { stream, updateTrigger, isCameraOpen });
   return {
     state: {
@@ -221,6 +235,7 @@ const handleAnalyse = async () => {
       image,
       imageUrl,
       audioBlob,
+      transcriptionDisplay, // Use this for rendering instead of audioBlob
       doctorResponse,
       audioUrl,
       loading,

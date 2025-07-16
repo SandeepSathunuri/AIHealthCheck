@@ -2,76 +2,59 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-# Step 1a: gTTS Setup (optional)
-import os
-from gtts import gTTS
-
-def text_to_speech_with_gtts_old(input_text, output_filepath):
-    language = "en"
-    audioobj = gTTS(text=input_text, lang=language, slow=False)
-    audioobj.save(output_filepath)
-
 # Step 1b: ElevenLabs Setup
 from elevenlabs import ElevenLabs
-from elevenlabs.client import ElevenLabs
+import os
 
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY")
 
-def text_to_speech_with_elevenlabs_old(input_text, output_filepath):
-    client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
-    try:
-        audio = client.text_to_speech.convert(
-            voice_id="pMsXgVXv3BLzUgSXRplE",
-            output_format="mp3_22050_32",
-            text=input_text,
-            model_id="eleven_turbo_v2"
-        )
-        with open(output_filepath, "wb") as f:
-            for chunk in audio:
-                f.write(chunk)
-    except Exception as e:
-        print(f"An error occurred while generating or saving audio: {e}")
+def text_to_speech_with_elevenlabs(input_text, output_path=None):
+    """
+    Generates text-to-speech audio using ElevenLabs and returns the audio as bytes.
+    If output_path is provided, saves the audio to that file.
 
-# ✅ Step 2: Playback using playsound (no temp file issues)
-from playsound import playsound
+    Args:
+        input_text (str): The text to convert to speech.
+        output_path (str, optional): Path to save the audio file. If None, only returns bytes.
 
-def safe_play_audio(mp3_filepath):
-    try:
-        playsound(mp3_filepath)
-    except Exception as e:
-        print(f"Playback error: {e}")
+    Returns:
+        bytes: The audio data, or None if generation fails.
+    """
+    if not ELEVENLABS_API_KEY:
+        raise ValueError("Missing ELEVENLABS_API_KEY in environment.")
 
-# Combined usage
-def text_to_speech_with_elevenlabs(input_text, output_filepath):
     client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
     try:
         print(f"Generating audio for: {input_text}")
-        print("Saving to:", os.path.abspath(output_filepath))
 
-        audio = client.text_to_speech.convert(
+        # Generate audio
+        audio_generator = client.text_to_speech.convert(
             voice_id="pMsXgVXv3BLzUgSXRplE",
             output_format="mp3_22050_32",
             text=input_text,
             model_id="eleven_turbo_v2"
         )
 
-        chunk_count = 0
-        with open(output_filepath, "wb") as f:
-            for chunk in audio:
-                chunk_count += 1
-                f.write(chunk)
+        # Collect all chunks into a single bytes object
+        audio_bytes = b""
+        for chunk in audio_generator:
+            audio_bytes += chunk
 
-        print(f"✅ File written with {chunk_count} chunks")
+        print(f"✅ Audio generated successfully, total size: {len(audio_bytes)} bytes")
 
-        if chunk_count == 0:
-            print("⚠️ No audio chunks returned — check ElevenLabs config")
+        # Save to output_path if provided
+        if output_path:
+            with open(output_path, "wb") as f:
+                f.write(audio_bytes)
+            print(f"✅ Audio saved to: {output_path}")
 
-        # Play only if file is saved
-        if chunk_count > 0:
-            safe_play_audio(output_filepath)
+        return audio_bytes
 
     except Exception as e:
-        print(f"An error occurred while generating or playing audio: {e}")
+        print(f"❌ Error generating audio: {e}")
+        return None
 
-input_text="Sandeep Nenu ninu premistuna"
-# text_to_speech_with_elevenlabs(input_text,"elevenlabs_testing_autoplay.mp3")
+# Example usage (optional)
+if __name__ == "__main__":
+    input_text = "Sandeep Nenu ninu premistuna"
+    text_to_speech_with_elevenlabs(input_text, "elevenlabs_testing_autoplay.mp3")

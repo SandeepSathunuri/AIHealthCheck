@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeadphones } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../context/AuthContext'; // Import useAuth
 
-const ResultsPanel = ({ audioBlob, doctorResponse, audioUrl }) => {
+const ResultsPanel = ({ transcriptionDisplay, doctorResponse, audioUrl }) => {
   const audioRef = useRef(null);
   const [audioSrc, setAudioSrc] = useState(null);
   const [error, setError] = useState(null);
@@ -21,23 +21,23 @@ const ResultsPanel = ({ audioBlob, doctorResponse, audioUrl }) => {
           if (!res.ok) throw new Error(`Audio fetch failed with status ${res.status}`);
           return res.blob();
         })
-        .then(blob => setAudioSrc(URL.createObjectURL(blob)))
+        .then(blob => {
+          const url = URL.createObjectURL(blob);
+          setAudioSrc(url);
+        })
         .catch(err => {
           console.error('Audio fetch error:', err);
           setError(err.message);
         });
     }
-  }, [audioUrl, isAuthenticated]); // Depend on isAuthenticated
+  }, [audioUrl, isAuthenticated]);
 
-  // Remove the auto-play useEffect
-  // useEffect(() => {
-  //   if (audioSrc && audioRef.current) {
-  //     audioRef.current.play().catch((error) => {
-  //       console.error('Auto-play failed:', error);
-  //       setError('Auto-play blocked by browser. Use controls to play.');
-  //     });
-  //   }
-  // }, [audioSrc]);
+  // Cleanup URL object
+  useEffect(() => {
+    return () => {
+      if (audioSrc) URL.revokeObjectURL(audioSrc);
+    };
+  }, [audioSrc]);
 
   return (
     <Box
@@ -65,7 +65,7 @@ const ResultsPanel = ({ audioBlob, doctorResponse, audioUrl }) => {
           Symptom Transcription
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          {audioBlob ? 'Transcription will appear after analysis...' : 'No audio recorded'}
+          {transcriptionDisplay || 'No audio recorded'}
         </Typography>
       </Box>
 
@@ -87,7 +87,6 @@ const ResultsPanel = ({ audioBlob, doctorResponse, audioUrl }) => {
             ref={audioRef}
             controls
             src={audioSrc}
-            // Removed autoPlay
             style={{ width: '100%', borderRadius: 6, marginTop: 6, boxShadow: '0 1px 4px rgba(0, 0, 0, 0.03)' }}
           />
         ) : error ? (
