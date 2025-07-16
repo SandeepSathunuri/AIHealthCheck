@@ -105,6 +105,15 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class DiagnosisCreate(BaseModel):
+    transcription: str
+    doctorResponse: str
+    createdAt: Optional[datetime.datetime] = None
+
+class DiagnosisUpdate(BaseModel):
+    transcription: Optional[str]
+    doctorResponse: Optional[str]
+
 # ---------------------- Auth Routes ----------------------
 @app.post("/auth/signup")
 async def signup(user: UserCreate):
@@ -190,6 +199,82 @@ async def process(audio: UploadFile = File(...), image: UploadFile = File(...), 
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.post("/medibot/history")
+async def create_diagnosis(diagnosis: DiagnosisCreate, current_user: dict = Depends(get_current_user)):
+    try:
+        diagnosis_data = {
+            "userEmail": current_user["email"],
+            "transcription": diagnosis.transcription,
+            "doctorResponse": diagnosis.doctorResponse,
+            "createdAt": diagnosis.createdAt or datetime.datetime.utcnow(),
+            "imageFileId": None,
+            "audioFileId": None,
+            "audioOutputId": None
+        }
+        result = diagnoses_collection.insert_one(diagnosis_data)
+        return {"success": True, "message": "Diagnosis created successfully", "id": str(result.inserted_id)}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to create diagnosis: {str(e)}")
+
+@app.put("/medibot/history/{diagnosis_id}")
+async def update_diagnosis(diagnosis_id: str, diagnosis: DiagnosisUpdate, current_user: dict = Depends(get_current_user)):
+    try:
+        diagnosis_id = ObjectId(diagnosis_id)
+        existing_diagnosis = diagnoses_collection.find_one({"_id": diagnosis_id, "userEmail": current_user["email"]})
+        if not existing_diagnosis:
+            raise HTTPException(status_code=404, detail="Diagnosis not found or not authorized")
+        
+        update_data = {}
+        if diagnosis.transcription is not None:
+            update_data["transcription"] = diagnosis.transcription
+        if diagnosis.doctorResponse is not None:
+            update_data["doctorResponse"] = diagnosis.doctorResponse
+        
+        if not update_data:
+            raise HTTPException(status_code=400, detail="No fields to update")
+        
+        result = diagnoses_collection.update_one(
+            {"_id": diagnosis_id},
+            {"$set": update_data}
+        )
+        if result.modified_count:
+            return {"success": True, "message": "Diagnosis updated successfully"}
+        else:
+            raise HTTPException(status_code=400, detail="No changes applied")
+    except InvalidId:
+        raise HTTPException(status_code=400, detail="Invalid diagnosis ID")
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to update diagnosis: {str(e)}")
+
+@app.delete("/medibot/history/{diagnosis_id}")
+async def delete_diagnosis(diagnosis_id: str, current_user: dict = Depends(get_current_user)):
+    try:
+        diagnosis_id = ObjectId(diagnosis_id)
+        existing_diagnosis = diagnoses_collection.find_one({"_id": diagnosis_id, "userEmail": current_user["email"]})
+        if not existing_diagnosis:
+            raise HTTPException(status_code=404, detail="Diagnosis not found or not authorized")
+        
+        # Optionally delete associated files from GridFS
+        for file_id in [existing_diagnosis.get("imageFileId"), existing_diagnosis.get("audioFileId"), existing_diagnosis.get("audioOutputId")]:
+            if file_id:
+                try:
+                    fs.delete(ObjectId(file_id))
+                except (InvalidId, NoFile):
+                    pass
+        
+        result = diagnoses_collection.delete_one({"_id": diagnosis_id})
+        if result.deleted_count:
+            return {"success": True, "message": "Diagnosis deleted successfully"}
+        else:
+            raise HTTPException(status_code=400, detail="Failed to delete diagnosis")
+    except InvalidId:
+        raise HTTPException(status_code=400, detail="Invalid diagnosis ID")
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to delete diagnosis: {str(e)}")
 
 @app.get("/medibot/history")
 async def get_history(current_user: dict = Depends(get_current_user)):

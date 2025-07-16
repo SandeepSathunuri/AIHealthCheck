@@ -18,7 +18,7 @@ import CameraDialog from '../components/CameraDialog';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { ToastContainer } from 'react-toastify';
 import { CircularProgress } from '@mui/material';
-import { useSidebar } from '../context/SidebarContext'; // Import context
+import { useSidebar } from '../context/SidebarContext';
 
 const GlassPaper = styled(Paper)(({ theme }) => ({
   position: 'relative',
@@ -89,8 +89,8 @@ const HomePage = () => {
     },
   } = useHomePageLogic();
 
-  const { isSidebarOpen, setIsSidebarOpen } = useSidebar(); // Use context
-  console.log('HomePage render, isSidebarOpen:', isSidebarOpen); // Debug log
+  const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
+  console.log('HomePage render, isSidebarOpen:', isSidebarOpen);
 
   const handleToggleDarkMode = () => {
     originalToggleDarkMode();
@@ -187,6 +187,7 @@ const HomePage = () => {
                   loading={loading}
                   startRecording={startRecording}
                   stopRecording={stopRecording}
+                  audioUrl={audioUrl} // Pass existing audio URL for editing
                 />
                 <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.2)' }} />
                 <ImageUploader

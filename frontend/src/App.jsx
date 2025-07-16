@@ -5,7 +5,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Home from './pages/Home';
 import History from './pages/History';
-import { SidebarProvider } from './context/SidebarContext'; // Verify path
+import { SidebarProvider } from './context/SidebarContext';
 import RefrshHandler from '../RefrshHandler';
 import Profile from './pages/Profile';
 

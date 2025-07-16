@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom'; // Added useLocation
 import { handleSuccess, handleError } from '../pages/utils';
 import { useThemeMode } from '../context/ThemeContext';
 
 export default function useHomePageLogic() {
   const navigate = useNavigate();
+  const location = useLocation(); // Added to access editRecord from state
   const { isDarkMode, toggleDarkMode } = useThemeMode();
+  const editRecord = location.state?.editRecord; // Get edit data if in edit mode
+
   const [loggedInUser, setLoggedInUser] = useState('');
-  const [image, setImage] = useState(null);
-  const [imageUrl, setImageUrl] = useState(null);
+  const [image, setImage] = useState(editRecord?.imagePath ? new Blob() : null); // Placeholder Blob for existing image
+  const [imageUrl, setImageUrl] = useState(editRecord?.imagePath ? `http://localhost:8080/${editRecord.imagePath}` : null);
   const [audioBlob, setAudioBlob] = useState(null); // Remains Blob for API
-  const [transcriptionDisplay, setTranscriptionDisplay] = useState(''); // New state for rendering
-  const [doctorResponse, setDoctorResponse] = useState('');
-  const [audioUrl, setAudioUrl] = useState('');
+  const [transcriptionDisplay, setTranscriptionDisplay] = useState(editRecord?.transcription || ''); // Preload transcription
+  const [doctorResponse, setDoctorResponse] = useState(editRecord?.doctorResponse || '');
+  const [audioUrl, setAudioUrl] = useState(editRecord?.audioOutputPath ? `http://localhost:8080/${editRecord.audioOutputPath}` : '');
   const [loading, setLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -56,7 +59,7 @@ export default function useHomePageLogic() {
     return () => {
       if (imageUrlRef.current) URL.revokeObjectURL(imageUrlRef.current);
       if (videoRef.current?.srcObject) {
-        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+        videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
       }
     };
   }, []);
@@ -97,7 +100,7 @@ export default function useHomePageLogic() {
     console.log('stopRecording called');
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
       setIsRecording(false);
     }
   };
@@ -108,7 +111,7 @@ export default function useHomePageLogic() {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       console.log('Stream acquired:', stream);
       setStream(stream);
-      setUpdateTrigger(prev => prev + 1);
+      setUpdateTrigger((prev) => prev + 1);
       console.log('Stream set in state:', stream, 'updateTrigger:', updateTrigger + 1);
       setIsCameraOpen(true);
     } catch (err) {
@@ -121,12 +124,12 @@ export default function useHomePageLogic() {
   const closeCamera = () => {
     console.log('closeCamera called');
     if (videoRef.current?.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
       videoRef.current.srcObject = null;
     }
     setIsCameraOpen(false);
     setStream(null);
-    setUpdateTrigger(prev => prev + 1);
+    setUpdateTrigger((prev) => prev + 1);
   };
 
   const capturePhoto = () => {
@@ -192,11 +195,16 @@ export default function useHomePageLogic() {
       const formData = new FormData();
       formData.append('image', image);
       formData.append('audio', audioBlob, 'voice.mp3');
+      if (editRecord?.id) {
+        formData.append('id', editRecord.id); // Pass ID for update
+      }
 
       const token = localStorage.getItem('token');
       console.log('Sending request with token:', token);
-      const response = await fetch('http://localhost:8080/medibot/process', {
-        method: 'POST',
+      const url = editRecord?.id ? `http://localhost:8080/medibot/history/${editRecord.id}` : 'http://localhost:8080/medibot/process';
+      const method = editRecord?.id ? 'PUT' : 'POST';
+      const response = await fetch(url, {
+        method,
         body: formData,
         headers: {
           Authorization: `Bearer ${token}`,
@@ -207,15 +215,15 @@ export default function useHomePageLogic() {
 
       const result = await response.json();
       console.log('Response received:', result);
-      setDoctorResponse(result.doctor_response);
-      setAudioUrl(result.audio_url);
+      setDoctorResponse(result.doctor_response || '');
+      setAudioUrl(result.audio_url || '');
       setTranscriptionDisplay(result.transcription || 'Transcription available in audio'); // Use transcription from response
       handleSuccess('Analysis complete');
 
       // Trigger auto-play after state update
       if (result.audio_url) {
         const audio = new Audio(result.audio_url);
-        audio.play().catch(err => {
+        audio.play().catch((err) => {
           console.error('Auto-play failed:', err);
           handleError('Auto-play blocked by browser. Use controls in ResultsPanel to play.');
         });
@@ -235,7 +243,7 @@ export default function useHomePageLogic() {
       image,
       imageUrl,
       audioBlob,
-      transcriptionDisplay, // Use this for rendering instead of audioBlob
+      transcriptionDisplay,
       doctorResponse,
       audioUrl,
       loading,
