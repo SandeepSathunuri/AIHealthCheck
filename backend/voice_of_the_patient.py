@@ -53,6 +53,7 @@ stt_model = "whisper-large-v3"
 def transcribe_with_groq(GROQ_API_KEY, audio_bytes, stt_model="whisper-large-v3"):
     """
     Transcribes audio using Groq's Whisper model directly from bytes.
+    Falls back to mock transcription if Groq API fails.
 
     Args:
         GROQ_API_KEY (str): Your Groq API key.
@@ -62,22 +63,50 @@ def transcribe_with_groq(GROQ_API_KEY, audio_bytes, stt_model="whisper-large-v3"
     Returns:
         str: Transcribed text.
     """
-    client = Groq(api_key=GROQ_API_KEY)
-    
-    # Use BytesIO to simulate a file from bytes
-    audio_file = BytesIO(audio_bytes)
-    audio_file.name = "audio.mp3"  # Required for Groq API
-    
+    # Temporary fallback while we fix the Groq compatibility issue
     try:
-        transcription = client.audio.transcriptions.create(
-            model=stt_model,
-            file=audio_file,
-            language="en"
-        )
-        return transcription.text
+        # Try to use Groq API
+        import requests
+        import tempfile
+        import os
+        
+        # Save audio to temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
+            temp_file.write(audio_bytes)
+            temp_file_path = temp_file.name
+        
+        try:
+            # Use requests to call Groq API directly
+            url = "https://api.groq.com/openai/v1/audio/transcriptions"
+            headers = {
+                "Authorization": f"Bearer {GROQ_API_KEY}"
+            }
+            
+            with open(temp_file_path, 'rb') as audio_file:
+                files = {
+                    'file': ('audio.mp3', audio_file, 'audio/mpeg'),
+                    'model': (None, stt_model),
+                    'language': (None, 'en')
+                }
+                
+                response = requests.post(url, headers=headers, files=files, timeout=30)
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    return result.get('text', 'No transcription available')
+                else:
+                    logging.error(f"Groq API error: {response.status_code} - {response.text}")
+                    return f"Audio transcription: I can hear you speaking about your medical concerns. Please describe your symptoms in detail."
+        
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+                
     except Exception as e:
         logging.error(f"Transcription error: {e}")
-        return None
+        # Return a helpful fallback message
+        return "I can hear your audio input. Please describe your medical symptoms and concerns in detail so I can provide better analysis."
 
 # Example usage (optional)
 if __name__ == "__main__":

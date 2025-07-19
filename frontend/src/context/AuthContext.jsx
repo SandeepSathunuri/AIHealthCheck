@@ -1,91 +1,156 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
-  const navigate = useNavigate();
-  const logoutTimer = useRef(null);
+  const [loading, setLoading] = useState(true);
 
-  const clearSession = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('loggedInUser');
-    setIsAuthenticated(false);
-    setUser(null);
-    if (logoutTimer.current) clearTimeout(logoutTimer.current);
-    navigate('/login');
-  };
-
-  const setLogoutTimer = (token) => {
-    if (logoutTimer.current) clearTimeout(logoutTimer.current);
-
-    try {
-      const decoded = jwtDecode(token);
-      const exp = decoded.exp * 1000; // Convert to milliseconds
-      const currentTime = Date.now();
-      const timeout = exp - currentTime;
-
-      if (timeout > 0) {
-        logoutTimer.current = setTimeout(() => {
-          alert('Session expired. Please log in again.');
-          clearSession();
-        }, timeout);
-      } else {
-        clearSession();
+  // Initialize user from localStorage or token
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+        
+        if (token && storedUser) {
+          // If we have stored user data, use it
+          setUser(JSON.parse(storedUser));
+        } else if (token) {
+          // If we only have token, fetch user data from backend
+          await fetchUserProfile(token);
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        // Clear invalid data
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Failed to decode JWT:', err);
-      clearSession();
+    };
+
+    initializeAuth();
+  }, []);
+
+  const fetchUserProfile = async (token) => {
+    try {
+      const response = await fetch('http://localhost:8080/auth/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData.user);
+        localStorage.setItem('user', JSON.stringify(userData.user));
+      } else {
+        throw new Error('Failed to fetch user profile');
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      // If profile fetch fails, clear auth data
+      logout();
     }
   };
 
-  const login = (token, username) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('loggedInUser', username);
-    setIsAuthenticated(true);
-    setUser(username);
-    setLogoutTimer(token);
-    navigate('/home');
+  const login = async (email, password) => {
+    try {
+      const response = await fetch('http://localhost:8080/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        const { token, user: userData } = data;
+        
+        // Store token and user data
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        setUser(userData);
+        return { success: true, user: userData };
+      } else {
+        return { success: false, message: data.message || 'Login failed' };
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
+  };
+
+  const register = async (name, email, password) => {
+    try {
+      const response = await fetch('http://localhost:8080/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        const { token, user: userData } = data;
+        
+        // Store token and user data
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        setUser(userData);
+        return { success: true, user: userData };
+      } else {
+        return { success: false, message: data.message || 'Registration failed' };
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
   };
 
   const logout = () => {
-    clearSession();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
   };
 
-  // Handle refresh and initial load
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const username = localStorage.getItem('loggedInUser');
+  const updateUser = (updatedUserData) => {
+    const newUserData = { ...user, ...updatedUserData };
+    setUser(newUserData);
+    localStorage.setItem('user', JSON.stringify(newUserData));
+  };
 
-    if (token && username) {
-      try {
-        const decoded = jwtDecode(token);
-        const currentTime = Date.now();
-        if (decoded.exp * 1000 > currentTime) {
-          setIsAuthenticated(true);
-          setUser(username);
-          setLogoutTimer(token);
-        } else {
-          clearSession();
-        }
-      } catch (err) {
-        console.error('Invalid token on refresh:', err);
-        clearSession();
-      }
-    } else {
-      setIsAuthenticated(false);
-      setUser(null);
-    }
-  }, []); // Empty dependency array for one-time check on mount
+  const value = {
+    user,
+    loading,
+    login,
+    register,
+    logout,
+    updateUser,
+    isAuthenticated: !!user,
+  };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export default AuthContext;

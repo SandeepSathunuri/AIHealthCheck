@@ -1,5 +1,5 @@
-from fastapi import FastAPI, Depends, HTTPException, File, UploadFile
-from fastapi.responses import StreamingResponse, Response
+from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Request
+from fastapi.responses import StreamingResponse, Response, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel, EmailStr
@@ -8,36 +8,43 @@ from jose import jwt, JWTError
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError, ServerSelectionTimeoutError
 from gridfs import GridFS, NoFile
-from dotenv import load_dotenv
-from typing import Optional
+from typing import Optional, Dict, Any
 from bson import ObjectId
 from bson.errors import InvalidId
 import datetime
 import traceback
 import base64
 import os
+import logging
 from concurrent.futures import ThreadPoolExecutor
+import asyncio
 
-# Load environment variables
-load_dotenv()
+# Import enterprise modules
+from config import settings
+from middleware.rate_limiter import rate_limit_middleware
+from middleware.security import security_middleware, input_validation_middleware
+from middleware.monitoring import monitoring_middleware, metrics, health_checker
+
+# Configure logging
+logging.basicConfig(
+    level=getattr(logging, settings.LOG_LEVEL),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Custom modules
 from brain_of_the_doctor import analyze_image_with_query
 from voice_of_the_doctor import text_to_speech_with_elevenlabs
 from voice_of_the_patient import transcribe_with_groq
 
-# Constants
-JWT_SECRET = os.getenv("JWT_SECRET", "default-secret-key")
-MONGO_URI = os.getenv("MONGO_CONN", "mongodb://localhost:27017/")
-ACCESS_TOKEN_EXPIRE_MINUTES = 1440
-ALGORITHM = "HS256"
-
 # MongoDB setup
 try:
-    client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+    print(f"🔍 Attempting to connect to MongoDB with: {settings.MONGO_CONN[:50]}...")
+    client = MongoClient(settings.MONGO_CONN, serverSelectionTimeoutMS=5000)
     client.server_info()
-    print("✅ MongoDB connected")
+    print("✅ MongoDB connected successfully")
 except ServerSelectionTimeoutError as e:
+    print(f"❌ MongoDB connection failed with connection string: {settings.MONGO_CONN[:50]}...")
     raise Exception(f"❌ MongoDB connection failed: {e}")
 
 db = client["test"]
@@ -45,14 +52,28 @@ fs = GridFS(db)
 users_collection = db["users"]
 diagnoses_collection = db["diagnoses"]
 
-# FastAPI app setup
-app = FastAPI(title="AI Doctor Backend")
+# FastAPI app setup with enterprise configuration
+app = FastAPI(
+    title="Medical AI Platform",
+    description="Enterprise-grade AI-powered medical consultation platform",
+    version="2.0.0",
+    docs_url="/api/docs" if settings.ENVIRONMENT != "production" else None,
+    redoc_url="/api/redoc" if settings.ENVIRONMENT != "production" else None,
+)
+
+# Add enterprise middleware stack (order matters!)
+app.middleware("http")(monitoring_middleware)
+app.middleware("http")(rate_limit_middleware)
+app.middleware("http")(security_middleware)
+app.middleware("http")(input_validation_middleware)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "https://yourdomain.com"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
+    max_age=3600,
 )
 
 # Security utilities
@@ -67,13 +88,13 @@ def hash_password(password):
 
 def create_access_token(data: dict, expires_delta: Optional[datetime.timedelta] = None):
     to_encode = data.copy()
-    expire = datetime.datetime.utcnow() + (expires_delta or datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.datetime.utcnow() + (expires_delta or datetime.timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, JWT_SECRET, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
         email = payload.get("sub")
         if not email:
             raise HTTPException(status_code=403, detail="Invalid token")
@@ -135,10 +156,78 @@ async def login(user: UserLogin):
     return {
         "message": "Login successful",
         "success": True,
-        "jwtToken": token,
-        "email": user.email,
-        "name": db_user["name"]
+        "token": token,
+        "user": {
+            "email": user.email,
+            "name": db_user["name"]
+        }
     }
+
+@app.get("/auth/profile")
+async def get_profile(current_user: dict = Depends(get_current_user)):
+    return {
+        "success": True,
+        "user": {
+            "email": current_user["email"],
+            "name": current_user["name"]
+        }
+    }
+
+@app.put("/auth/profile")
+async def update_profile(
+    profile_data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    try:
+        # Extract the fields to update
+        name = profile_data.get("name", "").strip()
+        email = profile_data.get("email", "").strip()
+        
+        # Validation
+        if not name or not email:
+            raise HTTPException(status_code=400, detail="Name and email are required")
+        
+        # Email format validation
+        import re
+        email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+        if not re.match(email_pattern, email):
+            raise HTTPException(status_code=400, detail="Invalid email format")
+        
+        # Check if email is already taken by another user
+        existing_user = users_collection.find_one({
+            "email": email,
+            "_id": {"$ne": current_user["_id"]}
+        })
+        if existing_user:
+            raise HTTPException(status_code=409, detail="Email already exists")
+        
+        # Update user profile
+        update_result = users_collection.update_one(
+            {"_id": current_user["_id"]},
+            {"$set": {
+                "name": name,
+                "email": email,
+                "updatedAt": datetime.datetime.utcnow()
+            }}
+        )
+        
+        if update_result.modified_count == 0:
+            raise HTTPException(status_code=400, detail="No changes were made")
+        
+        return {
+            "success": True,
+            "message": "Profile updated successfully",
+            "user": {
+                "name": name,
+                "email": email
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error updating profile: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ---------------------- Medibot Routes ----------------------
 def process_audio_image(audio_data, image_data, current_user):
@@ -340,6 +429,71 @@ def get_audio(audio_id: str):
     except NoFile:
         raise HTTPException(status_code=404, detail="Audio not found")
 
+# ---------------------- Enterprise Monitoring Routes ----------------------
+@app.get("/health", tags=["Monitoring"])
+async def health_check():
+    """Health check endpoint for load balancers"""
+    return await health_checker.get_health_status()
+
+@app.get("/metrics", tags=["Monitoring"])
+async def get_metrics():
+    """Prometheus-style metrics endpoint"""
+    return metrics.get_metrics()
+
+@app.get("/api/status", tags=["Monitoring"])
+async def api_status():
+    """Detailed API status information"""
+    return {
+        "status": "operational",
+        "version": "2.0.0",
+        "environment": settings.ENVIRONMENT,
+        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "features": {
+            "ai_analysis": True,
+            "voice_processing": True,
+            "image_processing": True,
+            "user_management": True,
+            "rate_limiting": True,
+            "monitoring": True
+        }
+    }
+
+# ---------------------- Enhanced Error Handling ----------------------
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Enhanced error handling with logging"""
+    logger.warning(f"HTTP {exc.status_code}: {exc.detail} - {request.method} {request.url}")
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": exc.detail,
+            "status_code": exc.status_code,
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "path": str(request.url.path)
+        }
+    )
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Handle unexpected errors"""
+    logger.error(f"Unexpected error: {str(exc)} - {request.method} {request.url}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "Internal server error",
+            "status_code": 500,
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "path": str(request.url.path)
+        }
+    )
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run(
+        app, 
+        host="0.0.0.0", 
+        port=8080,
+        workers=settings.WORKER_PROCESSES if settings.ENVIRONMENT == "production" else 1,
+        log_level=settings.LOG_LEVEL.lower(),
+        access_log=True
+    )

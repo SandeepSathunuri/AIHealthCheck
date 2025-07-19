@@ -1,184 +1,416 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useThemeMode } from '../context/ThemeContext';
+import React, { useState } from "react";
+import {
+  Box,
+  Container,
+  Typography,
+  TextField,
+  Link,
+  Alert,
+  InputAdornment,
+  IconButton,
+  Divider,
+  useTheme,
+  useMediaQuery,
+} from "@mui/material";
+import {
+  Person,
+  Email,
+  Lock,
+  Visibility,
+  VisibilityOff,
+  Google,
+  GitHub,
+  ArrowForward,
+} from "@mui/icons-material";
+import { motion, AnimatePresence } from "framer-motion";
+import { ThemeProvider } from "@mui/material/styles";
+import { darkTheme } from "../styles/theme";
+import GlassCard from "../components/ui/GlassCard";
+import AnimatedButton from "../components/ui/AnimatedButton";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
-function Signup() {
-  const [signupInfo, setSignupInfo] = useState({
-    name: '',
-    email: '',
-    password: ''
+const FloatingParticles = () => {
+  const particles = Array.from({ length: 50 }, (_, i) => i);
+
+  return (
+    <Box
+      sx={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        overflow: "hidden",
+        zIndex: 0,
+      }}
+    >
+      {particles.map((particle) => (
+        <motion.div
+          key={particle}
+          style={{
+            position: "absolute",
+            width: Math.random() * 4 + 1,
+            height: Math.random() * 4 + 1,
+            background: "rgba(255, 255, 255, 0.3)",
+            borderRadius: "50%",
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            y: [0, -30, 0],
+            opacity: [0, 1, 0],
+          }}
+          transition={{
+            duration: Math.random() * 3 + 2,
+            repeat: Infinity,
+            delay: Math.random() * 2,
+          }}
+        />
+      ))}
+    </Box>
+  );
+};
+
+const SocialLoginButton = ({ icon, label, onClick, gradient }) => (
+  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+    <AnimatedButton
+      fullWidth
+      variant="outlined"
+      startIcon={icon}
+      onClick={onClick}
+      sx={{
+        borderColor: "rgba(255, 255, 255, 0.2)",
+        color: "white",
+        background: "rgba(255, 255, 255, 0.05)",
+        "&:hover": {
+          borderColor: "rgba(255, 255, 255, 0.4)",
+          background: "rgba(255, 255, 255, 0.1)",
+        },
+      }}
+    >
+      {label}
+    </AnimatedButton>
+  </motion.div>
+);
+
+const Signup = () => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
   });
-  const [message, setMessage] = useState({ text: '', type: 'success', show: false });
-  const navigate = useNavigate();
-  const { isDarkMode } = useThemeMode();
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    console.log(name, value);
-    const copySignupInfo = { ...signupInfo };
-    copySignupInfo[name] = value;
-    setSignupInfo(copySignupInfo);
+  const navigate = useNavigate();
+  const { register } = useAuth();
+  const theme = darkTheme;
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const handleInputChange = (field) => (event) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: event.target.value,
+    }));
+    if (error) setError("");
   };
 
-  const handleSignup = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const { name, email, password } = signupInfo;
-    if (!name || !email || !password) {
-      setMessage({ text: 'name, email and password are required', type: 'error', show: true });
-      setTimeout(() => setMessage({ ...message, show: false }), 3000);
+    setLoading(true);
+    setError("");
+
+    // Basic validation
+    if (!formData.name || !formData.email || !formData.password) {
+      setError("All fields are required");
+      setLoading(false);
       return;
     }
-    try {
-      const url = `http://localhost:8080/auth/signup`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(signupInfo)
-      });
-      const result = await response.json();
-      const { success, message: msg, error } = result;
-      if (success) {
-        setMessage({ text: msg, type: 'success', show: true });
-        setTimeout(() => {
-          setMessage({ ...message, show: false });
-          navigate('/login');
-        }, 1000);
-      } else if (error) {
-        const details = error?.details[0].message;
-        setMessage({ text: details, type: 'error', show: true });
-        setTimeout(() => setMessage({ ...message, show: false }), 3000);
-      } else if (!success) {
-        setMessage({ text: msg, type: 'error', show: true });
-        setTimeout(() => setMessage({ ...message, show: false }), 3000);
-      }
-      console.log(result);
-    } catch (err) {
-      setMessage({ text: 'Signup failed. Please try again later.', type: 'error', show: true });
-      setTimeout(() => setMessage({ ...message, show: false }), 3000);
+
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      setLoading(false);
+      return;
     }
+
+    try {
+      const result = await register(formData.name, formData.email, formData.password);
+      
+      if (result.success) {
+        setSuccess(true);
+        setTimeout(() => {
+          navigate("/home");
+        }, 1000);
+      } else {
+        setError(result.message || "Registration failed");
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.6,
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        duration: 0.5,
+        ease: [0.4, 0, 0.2, 1],
+      },
+    },
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        backgroundColor: isDarkMode ? '#1a1a2e' : '#f0f4ff',
-        color: isDarkMode ? '#e0e0e0' : '#333',
-        transition: 'all 0.3s ease',
-      }}
-    >
-      <div className='container' style={{ backgroundColor: isDarkMode ? '#2e2e48' : '#FFF', borderRadius: '10px', padding: '32px 48px', boxShadow: isDarkMode ? '8px 8px 24px 0px rgba(0, 0, 0, 0.5)' : '8px 8px 24px 0px rgba(66, 68, 90, 1)' }}>
-        <h1 style={{ color: isDarkMode ? '#e0e0e0' : '#333', marginBottom: '20px' }}>Signup</h1>
-        <form onSubmit={handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div>
-            <label htmlFor='name' style={{ color: isDarkMode ? '#e0e0e0' : '#333', fontSize: '20px' }}>Name</label>
-            <input
-              onChange={handleChange}
-              type='text'
-              name='name'
-              autoFocus
-              placeholder='Enter your name...'
-              value={signupInfo.name}
-              style={{
-                width: '100%',
-                fontSize: '20px',
-                padding: '10px',
-                border: 'none',
-                outline: 'none',
-                borderBottom: `1px solid ${isDarkMode ? '#666' : 'black'}`,
-                backgroundColor: isDarkMode ? '#333' : 'transparent',
-                color: isDarkMode ? '#e0e0e0' : '#333',
-              }}
-            />
-          </div>
-          <div>
-            <label htmlFor='email' style={{ color: isDarkMode ? '#e0e0e0' : '#333', fontSize: '20px' }}>Email</label>
-            <input
-              onChange={handleChange}
-              type='email'
-              name='email'
-              placeholder='Enter your email...'
-              value={signupInfo.email}
-              style={{
-                width: '100%',
-                fontSize: '20px',
-                padding: '10px',
-                border: 'none',
-                outline: 'none',
-                borderBottom: `1px solid ${isDarkMode ? '#666' : 'black'}`,
-                backgroundColor: isDarkMode ? '#333' : 'transparent',
-                color: isDarkMode ? '#e0e0e0' : '#333',
-              }}
-            />
-          </div>
-          <div>
-            <label htmlFor='password' style={{ color: isDarkMode ? '#e0e0e0' : '#333', fontSize: '20px' }}>Password</label>
-            <input
-              onChange={handleChange}
-              type='password'
-              name='password'
-              placeholder='Enter your password...'
-              value={signupInfo.password}
-              style={{
-                width: '100%',
-                fontSize: '20px',
-                padding: '10px',
-                border: 'none',
-                outline: 'none',
-                borderBottom: `1px solid ${isDarkMode ? '#666' : 'black'}`,
-                backgroundColor: isDarkMode ? '#333' : 'transparent',
-                color: isDarkMode ? '#e0e0e0' : '#333',
-              }}
-            />
-          </div>
-          <button
-            type='submit'
-            style={{
-              backgroundColor: 'purple',
-              border: 'none',
-              fontSize: '20px',
-              color: 'white',
-              borderRadius: '5px',
-              padding: '10px',
-              cursor: 'pointer',
-              margin: '10px 0',
-            }}
+    <ThemeProvider theme={theme}>
+      <Box
+        sx={{
+          minHeight: "100vh",
+          background:
+            "linear-gradient(135deg, #0a0a1e 0%, #1a1a3a 50%, #2d1b69 100%)",
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+        }}
+      >
+        {/* Animated Background */}
+        <FloatingParticles />
+
+        {/* Background Gradients */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background:
+              "radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.4), transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.4), transparent 50%)",
+            zIndex: 0,
+          }}
+        />
+
+        <Container maxWidth="sm" sx={{ position: "relative", zIndex: 1 }}>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
           >
-            Signup
-          </button>
-          <span style={{ color: isDarkMode ? '#e0e0e0' : '#333' }}>
-            Already have an account? <Link to="/login" style={{ color: isDarkMode ? '#e0e0e0' : '#333', textDecoration: 'none', fontWeight: 'bold' }}>Login</Link>
-          </span>
-        </form>
-        {message.show && (
-          <Box
-            sx={{
-              position: 'fixed',
-              bottom: '20px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              p: 1.5,
-              borderRadius: 8,
-              backgroundColor: message.type === 'success' ? '#4caf50' : '#f44336',
-              color: 'white',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-              animation: 'fadeInOut 3s ease forwards',
-              zIndex: 1000,
-            }}
-          >
-            <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {message.type === 'success' ? '✔' : '⚠'} {message.text}
-            </Typography>
-          </Box>
-        )}
-      </div>
-    </div>
+            <GlassCard
+              padding={isMobile ? 3 : 4}
+              glowEffect
+              gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+            >
+              <Box sx={{ textAlign: "center", mb: 4 }}>
+                <motion.div variants={itemVariants}>
+                  <Typography
+                    variant="h3"
+                    sx={{
+                      fontWeight: 700,
+                      background:
+                        "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                      backgroundClip: "text",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      mb: 1,
+                    }}
+                  >
+                    Join Medical AI
+                  </Typography>
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                  <Typography
+                    variant="body1"
+                    sx={{ color: "rgba(255, 255, 255, 0.7)" }}
+                  >
+                    Create your account to access AI-powered medical analysis
+                  </Typography>
+                </motion.div>
+              </Box>
+
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Alert severity="error" sx={{ mb: 3 }}>
+                      {error}
+                    </Alert>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <Box component="form" onSubmit={handleSubmit}>
+                <motion.div variants={itemVariants}>
+                  <TextField
+                    fullWidth
+                    label="Full Name"
+                    type="text"
+                    value={formData.name}
+                    onChange={handleInputChange("name")}
+                    required
+                    sx={{ mb: 3 }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Person sx={{ color: "rgba(255, 255, 255, 0.5)" }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                  <TextField
+                    fullWidth
+                    label="Email Address"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange("email")}
+                    required
+                    sx={{ mb: 3 }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Email sx={{ color: "rgba(255, 255, 255, 0.5)" }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                  <TextField
+                    fullWidth
+                    label="Password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={handleInputChange("password")}
+                    required
+                    sx={{ mb: 4 }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Lock sx={{ color: "rgba(255, 255, 255, 0.5)" }} />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={() => setShowPassword(!showPassword)}
+                            edge="end"
+                            sx={{ color: "rgba(255, 255, 255, 0.5)" }}
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                  <AnimatedButton
+                    type="submit"
+                    fullWidth
+                    size="large"
+                    loading={loading}
+                    success={success}
+                    gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                    glowEffect
+                    endIcon={<ArrowForward />}
+                    sx={{ mb: 3 }}
+                  >
+                    Create Account
+                  </AnimatedButton>
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                  <Divider
+                    sx={{
+                      mb: 3,
+                      "&::before, &::after": {
+                        borderColor: "rgba(255, 255, 255, 0.2)",
+                      },
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "rgba(255, 255, 255, 0.5)" }}
+                    >
+                      Or continue with
+                    </Typography>
+                  </Divider>
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                  <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
+                    <SocialLoginButton
+                      icon={<Google />}
+                      label="Google"
+                      onClick={() => console.log("Google signup")}
+                    />
+                    <SocialLoginButton
+                      icon={<GitHub />}
+                      label="GitHub"
+                      onClick={() => console.log("GitHub signup")}
+                    />
+                  </Box>
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                  <Box sx={{ textAlign: "center" }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "rgba(255, 255, 255, 0.7)" }}
+                    >
+                      Already have an account?{" "}
+                      <Link
+                        onClick={() => navigate("/login")}
+                        sx={{
+                          color: "#667eea",
+                          textDecoration: "none",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          "&:hover": {
+                            textDecoration: "underline",
+                          },
+                        }}
+                      >
+                        Sign in
+                      </Link>
+                    </Typography>
+                  </Box>
+                </motion.div>
+              </Box>
+            </GlassCard>
+          </motion.div>
+        </Container>
+      </Box>
+    </ThemeProvider>
   );
-}
+};
 
 export default Signup;

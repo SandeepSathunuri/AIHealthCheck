@@ -1,223 +1,439 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import Sidebar from '../components/Sidebar';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { useTheme, Box, Typography, Alert } from '@mui/material';
-import HistoryEmpty from '../components/HistoryEmpty';
-import HistoryLoading from '../components/HistoryLoading';
-import HistoryTable from '../components/HistoryTable';
-import HistoryPagination from '../components/HistoryPagination';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHistory } from '@fortawesome/free-solid-svg-icons';
-import { useSidebar } from '../context/SidebarContext';
-import { useNavigate } from 'react-router-dom'; // Added for navigation
+import React, { useState, useEffect } from "react";
+import {
+  Box,
+  Container,
+  Alert,
+  Pagination,
+  useMediaQuery,
+  CssBaseline,
+} from "@mui/material";
+import { ThemeProvider } from "@mui/material/styles";
+import { darkTheme, lightTheme } from "../styles/theme";
+import ModernSidebar from "../components/ui/ModernSidebar";
+import LoadingSpinner from "../components/ui/LoadingSpinner";
+import HistoryHeader from "../components/history/HistoryHeader";
+import HistorySearchBar from "../components/history/HistorySearchBar";
+import HistoryTable from "../components/history/HistoryTable";
+import HistoryFilterMenu from "../components/history/HistoryFilterMenu";
+import ImagePreviewDialog from "../components/history/ImagePreviewDialog";
+import EmptyHistoryState from "../components/history/EmptyHistoryState";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useThemeMode } from "../context/ThemeContext";
 
-// Simple Error Boundary Component
-const ErrorBoundary = ({ children }) => {
-  const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    const handleError = () => setHasError(true);
-    window.addEventListener('error', handleError);
-    return () => window.removeEventListener('error', handleError);
-  }, []);
-
-  if (hasError) {
-    return <Typography color="error">Something went wrong. Please try again later.</Typography>;
-  }
-
-  return children;
-};
+// All components are now imported from separate files
 
 const History = () => {
-  const theme = useTheme();
-  const { user } = useAuth();
-  const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
-  console.log('History sidebar state:', isSidebarOpen);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { isDarkMode, toggleDarkMode } = useThemeMode();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem('darkMode') === 'true');
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const navigate = useNavigate(); // Added for navigation
-
-  const dynamicTheme = createTheme({
-    palette: {
-      mode: isDarkMode ? 'dark' : 'light',
-      primary: { main: isDarkMode ? '#00d4ff' : '#1e3a8a' },
-      background: { default: isDarkMode ? '#0a0a1e' : '#e6f0fa' },
-      text: { primary: isDarkMode ? '#ffffff' : '#1e3a8a', secondary: isDarkMode ? '#d1d5db' : '#4b5563' },
-    },
+  const [currentPage, setCurrentPage] = useState(1);
+  const [imagePreview, setImagePreview] = useState({
+    open: false,
+    url: "",
+    title: "",
   });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchField, setSearchField] = useState("all");
+  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
+  const [filters, setFilters] = useState({
+    dateRange: "all",
+    hasImage: "all",
+    hasAudio: "all",
+  });
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const isSmallScreen = useMediaQuery(darkTheme.breakpoints.down("md"));
 
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-    console.log('Toggling dark mode to:', newDarkMode);
-    setIsDarkMode(newDarkMode);
-    localStorage.setItem('darkMode', newDarkMode);
+  const recordsPerPage = 10;
+
+  const getFilteredRecords = () => {
+    let filtered = history;
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((record) => {
+        switch (searchField) {
+          case "transcription":
+            return (
+              record.transcription &&
+              record.transcription.toLowerCase().includes(query)
+            );
+          case "response":
+            return (
+              record.doctorResponse &&
+              record.doctorResponse.toLowerCase().includes(query)
+            );
+          case "date":
+            const date = new Date(record.createdAt)
+              .toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })
+              .toLowerCase();
+            return date.includes(query);
+          case "all":
+          default:
+            return (
+              (record.transcription &&
+                record.transcription.toLowerCase().includes(query)) ||
+              (record.doctorResponse &&
+                record.doctorResponse.toLowerCase().includes(query)) ||
+              new Date(record.createdAt)
+                .toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })
+                .toLowerCase()
+                .includes(query)
+            );
+        }
+      });
+    }
+
+    if (filters.dateRange !== "all") {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      filtered = filtered.filter((record) => {
+        const recordDate = new Date(record.createdAt);
+
+        switch (filters.dateRange) {
+          case "today":
+            return recordDate >= today;
+          case "week":
+            const weekAgo = new Date(today);
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            return recordDate >= weekAgo;
+          case "month":
+            const monthAgo = new Date(today);
+            monthAgo.setMonth(monthAgo.getMonth() - 1);
+            return recordDate >= monthAgo;
+          case "year":
+            const yearAgo = new Date(today);
+            yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+            return recordDate >= yearAgo;
+          default:
+            return true;
+        }
+      });
+    }
+
+    if (filters.hasImage !== "all") {
+      filtered = filtered.filter((record) => {
+        const hasImage = Boolean(record.imagePath);
+        return filters.hasImage === "yes" ? hasImage : !hasImage;
+      });
+    }
+
+    if (filters.hasAudio !== "all") {
+      filtered = filtered.filter((record) => {
+        const hasAudio = Boolean(record.audioOutputPath);
+        return filters.hasAudio === "yes" ? hasAudio : !hasAudio;
+      });
+    }
+
+    return filtered;
   };
+
+  const filteredRecords = getFilteredRecords();
+  const indexOfLastRecord = currentPage * recordsPerPage;
+  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+  const currentRecords = filteredRecords.slice(
+    indexOfFirstRecord,
+    indexOfLastRecord
+  );
+  const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    window.location.href = '/login';
+    logout();
+    navigate("/login");
   };
 
-  // Read operation
+  const handleToggleTheme = () => {
+    toggleDarkMode();
+  };
+
+  const handleViewImage = (imageUrl, title) => {
+    setImagePreview({ open: true, url: imageUrl, title });
+  };
+
+  const handleCloseImagePreview = () => {
+    setImagePreview({ open: false, url: "", title: "" });
+  };
+
+  const handlePageChange = (event, page) => {
+    setCurrentPage(page);
+  };
+
+  const handleSearchChange = (event) => {
+    setSearchQuery(event.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleSearchFieldChange = (event) => {
+    setSearchField(event.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    setCurrentPage(1);
+  };
+
+  const handleFilterClick = (event) => {
+    setFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleFilterClose = () => {
+    setFilterAnchorEl(null);
+  };
+
+  const handleFilterChange = (filterType, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [filterType]: value,
+    }));
+    setCurrentPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      dateRange: "all",
+      hasImage: "all",
+      hasAudio: "all",
+    });
+    setCurrentPage(1);
+  };
+
+  const getActiveFilterCount = () => {
+    let count = 0;
+    if (filters.dateRange !== "all") count++;
+    if (filters.hasImage !== "all") count++;
+    if (filters.hasAudio !== "all") count++;
+    return count;
+  };
+
   useEffect(() => {
     const fetchHistory = async () => {
       try {
         setLoading(true);
         setError(null);
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         if (!token) {
-          setError('No authentication token found. Please log in.');
+          setError("No authentication token found. Please log in.");
+          navigate("/login");
           return;
         }
-        const res = await fetch('http://localhost:8080/medibot/history', {
+
+        const res = await fetch("http://localhost:8080/medibot/history", {
           headers: { Authorization: `Bearer ${token}` },
         });
+
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
+
         const data = await res.json();
-        console.log('History data received:', data);
-        if (data.success) setHistory(data.history);
-        else {
-          console.error('Failed to fetch history:', data);
-          setError(data.message || 'Failed to fetch history');
+        if (data.success) {
+          setHistory(data.history || []);
+        } else {
+          setError(data.message || "Failed to fetch history");
         }
       } catch (err) {
-        console.error('Error fetching history:', err);
-        setError('Unable to connect to the server. Please ensure the backend is running at http://localhost:8080.');
+        console.error("Error fetching history:", err);
+        setError(
+          "Unable to connect to the server. Please ensure the backend is running."
+        );
       } finally {
         setLoading(false);
       }
     };
-    fetchHistory();
-  }, []);
 
-  // Delete operation
+    fetchHistory();
+  }, [navigate]);
+
   const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this record?")) {
+      return;
+    }
+
     setError(null);
     setSuccess(null);
-    console.log(`Deleting record with ID: ${id}, URL: http://localhost:8080/medibot/history/${id}`);
+
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const res = await fetch(`http://localhost:8080/medibot/history/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
+
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
       const data = await res.json();
       if (data.success) {
-        setSuccess('Record deleted successfully');
+        setSuccess("Record deleted successfully");
         setHistory(history.filter((record) => record.id !== id));
+        setTimeout(() => setSuccess(null), 3000);
       } else {
-        setError(data.message || 'Failed to delete record');
+        setError(data.message || "Failed to delete record");
       }
     } catch (err) {
-      console.error('Error deleting record:', err);
-      setError('Error deleting record or backend not available');
+      console.error("Error deleting record:", err);
+      setError("Error deleting record. Please try again.");
     }
   };
 
-  // Edit operation
   const handleEdit = (record) => {
-    console.log('Edit clicked for record:', record);
-    navigate('/home', { state: { editRecord: record } }); // Navigate to HomePage with record data
+    navigate("/home", { state: { editRecord: record } });
   };
 
-  useEffect(() => {
-    const handleProcessResponse = (event) => {
-      if (event.data && event.data.autoplay_url) {
-        const audio = new Audio(event.data.autoplay_url);
-        audio.play().catch((err) => console.error('Auto-play failed:', err));
-      }
-    };
-    window.addEventListener('message', handleProcessResponse);
-    return () => window.removeEventListener('message', handleProcessResponse);
-  }, []);
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const recordsPerPage = 5;
-  const indexOfLastRecord = currentPage * recordsPerPage;
-  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentRecords = history.slice(indexOfFirstRecord, indexOfLastRecord);
-  const totalPages = Math.ceil(history.length / recordsPerPage);
-
-  const handlePageChange = (page) => setCurrentPage(page);
-
   return (
-    <ThemeProvider theme={dynamicTheme}>
-      <ErrorBoundary>
+    <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
+      <CssBaseline />
+      <Box
+        sx={{
+          minHeight: "100vh",
+          background: isDarkMode
+            ? "linear-gradient(135deg, #0a0a1e 0%, #1a1a3a 50%, #2d1b69 100%)"
+            : "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+          position: "relative",
+          overflow: "hidden",
+          transition: "none", // Disable background transitions
+        }}
+      >
         <Box
           sx={{
-            minHeight: '100vh',
-            width: '100%',
-            overflowX: 'hidden',
-            overflowY: 'auto',
-            background: dynamicTheme.palette.background.default,
-            display: 'flex',
-            position: 'relative',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'radial-gradient(circle at 15% 15%, rgba(0, 212, 255, 0.2), transparent 60%)',
-              zIndex: 0,
-            },
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background:
+              "radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3), transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3), transparent 50%)",
+            zIndex: 0,
+            transition: "none",
           }}
-        >
-          <Sidebar
-            isOpen={isSidebarOpen}
-            setIsOpen={setIsSidebarOpen}
-            isDarkMode={isDarkMode}
-            toggleDarkMode={toggleDarkMode}
-            handleLogout={handleLogout}
-          />
-          <Box
-            flexGrow={1}
-            p={2}
-            sx={{ ml: isSidebarOpen ? '70px' : '50px', transition: 'margin-left 0.3s ease' }}
-          >
-            <Typography
-              variant="h4"
-              mb={3}
-              sx={{ display: 'flex', alignItems: 'center', gap: 1, color: dynamicTheme.palette.text.primary }}
-            >
-              <FontAwesomeIcon icon={faHistory} />
-              Diagnosis History
-            </Typography>
+        />
 
-            {/* History Table and Pagination */}
-            {loading ? (
-              <HistoryLoading />
-            ) : history.length === 0 ? (
-              <HistoryEmpty />
-            ) : (
-              <>
-                <HistoryTable
-                  records={currentRecords}
-                  isDarkMode={isDarkMode}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
-                <HistoryPagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
-                  isDarkMode={isDarkMode}
-                />
-              </>
-            )}
-            {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
-            {success && <Alert severity="success" sx={{ mt: 2 }}>{success}</Alert>}
-          </Box>
-        </Box>
-      </ErrorBoundary>
+        <ModernSidebar
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          isDarkMode={isDarkMode}
+          onToggleTheme={handleToggleTheme}
+          onLogout={handleLogout}
+          user={user}
+        />
+
+        <HistoryHeader
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          recordCount={history.length}
+          isDarkMode={isDarkMode}
+        />
+
+        <Container
+          maxWidth="xl"
+          sx={{ py: 4, position: "relative", zIndex: 1 }}
+        >
+          {history.length > 0 && (
+            <HistorySearchBar
+              searchQuery={searchQuery}
+              searchField={searchField}
+              filteredRecords={filteredRecords}
+              isDarkMode={isDarkMode}
+              onSearchChange={handleSearchChange}
+              onSearchFieldChange={handleSearchFieldChange}
+              onClearSearch={handleClearSearch}
+              onFilterClick={handleFilterClick}
+              getActiveFilterCount={getActiveFilterCount}
+            />
+          )}
+
+          <HistoryFilterMenu
+            anchorEl={filterAnchorEl}
+            open={Boolean(filterAnchorEl)}
+            onClose={handleFilterClose}
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={handleClearFilters}
+            isDarkMode={isDarkMode}
+          />
+
+          {error && (
+            <Box sx={{ mb: 3 }}>
+              <Alert severity="error" onClose={() => setError(null)}>
+                {error}
+              </Alert>
+            </Box>
+          )}
+
+          {success && (
+            <Box sx={{ mb: 3 }}>
+              <Alert severity="success" onClose={() => setSuccess(null)}>
+                {success}
+              </Alert>
+            </Box>
+          )}
+
+          {loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+              <LoadingSpinner message="Loading medical history..." />
+            </Box>
+          ) : history.length === 0 ? (
+            <EmptyHistoryState isDarkMode={isDarkMode} />
+          ) : (
+            <>
+              <HistoryTable
+                records={currentRecords}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onViewImage={handleViewImage}
+                isDarkMode={isDarkMode}
+              />
+
+              {totalPages > 1 && (
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+                  <Pagination
+                    count={totalPages}
+                    page={currentPage}
+                    onChange={handlePageChange}
+                    color="primary"
+                    size="large"
+                    sx={{
+                      "& .MuiPaginationItem-root": {
+                        color: "white",
+                        borderColor: "rgba(255, 255, 255, 0.3)",
+                        "&:hover": {
+                          backgroundColor: "rgba(255, 255, 255, 0.1)",
+                        },
+                        "&.Mui-selected": {
+                          background:
+                            "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                          color: "white",
+                        },
+                        transition: "none", // Disable pagination transitions
+                      },
+                    }}
+                  />
+                </Box>
+              )}
+            </>
+          )}
+
+          <ImagePreviewDialog
+            open={imagePreview.open}
+            onClose={handleCloseImagePreview}
+            imageUrl={imagePreview.url}
+            title={imagePreview.title}
+            isDarkMode={isDarkMode}
+          />
+        </Container>
+      </Box>
     </ThemeProvider>
   );
 };

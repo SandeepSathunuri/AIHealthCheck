@@ -10,12 +10,13 @@ export default function useHomePageLogic() {
   const editRecord = location.state?.editRecord; // Get edit data if in edit mode
 
   const [loggedInUser, setLoggedInUser] = useState('');
-  const [image, setImage] = useState(editRecord?.imagePath ? new Blob() : null); // Placeholder Blob for existing image
-  const [imageUrl, setImageUrl] = useState(editRecord?.imagePath ? `http://localhost:8080/${editRecord.imagePath}` : null);
-  const [audioBlob, setAudioBlob] = useState(null); // Remains Blob for API
-  const [transcriptionDisplay, setTranscriptionDisplay] = useState(editRecord?.transcription || ''); // Preload transcription
+  const [image, setImage] = useState(null);
+  const [imageUrl, setImageUrl] = useState(null);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [transcriptionDisplay, setTranscriptionDisplay] = useState(editRecord?.transcription || '');
   const [doctorResponse, setDoctorResponse] = useState(editRecord?.doctorResponse || '');
   const [audioUrl, setAudioUrl] = useState(editRecord?.audioOutputPath ? `http://localhost:8080/${editRecord.audioOutputPath}` : '');
+  const [isEditMode, setIsEditMode] = useState(!!editRecord);
   const [loading, setLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -53,6 +54,51 @@ export default function useHomePageLogic() {
       setImageUrl(null);
     }
   }, [image]);
+
+  // Initialize edit mode data
+  useEffect(() => {
+    if (editRecord) {
+      console.log('Initializing edit mode with record:', editRecord);
+      
+      // Load existing image if available
+      if (editRecord.imagePath) {
+        const imageUrl = `http://localhost:8080/${editRecord.imagePath}`;
+        console.log('Loading existing image from:', imageUrl);
+        fetch(imageUrl)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.blob();
+          })
+          .then(blob => {
+            // Create a File object from the blob to maintain compatibility
+            const file = new File([blob], 'existing-image.jpg', { type: blob.type || 'image/jpeg' });
+            setImage(file);
+            console.log('✅ Successfully loaded existing image for edit mode:', file);
+          })
+          .catch(err => {
+            console.error('❌ Failed to load existing image:', err);
+            handleError('Failed to load existing image');
+          });
+      }
+
+      // Load existing audio if available
+      if (editRecord.audioOutputPath) {
+        const audioUrl = `http://localhost:8080/${editRecord.audioOutputPath}`;
+        fetch(audioUrl)
+          .then(response => response.blob())
+          .then(blob => {
+            setAudioBlob(blob);
+            console.log('Loaded existing audio for edit mode');
+          })
+          .catch(err => {
+            console.error('Failed to load existing audio:', err);
+            // Don't show error for audio as it's not critical for editing
+          });
+      }
+    }
+  }, [editRecord]);
 
   useEffect(() => {
     console.log('useEffect: Cleanup on unmount');
@@ -179,6 +225,18 @@ export default function useHomePageLogic() {
     setImageUrl(null);
   };
 
+  const handleAudioRecording = (blob) => {
+    console.log('handleAudioRecording called with blob:', blob);
+    if (blob) {
+      setAudioBlob(blob);
+      setTranscriptionDisplay('Audio recorded, ready for analysis');
+      handleSuccess('Audio recording completed');
+    } else {
+      setAudioBlob(null);
+      setTranscriptionDisplay('');
+    }
+  };
+
   const handleAnalyse = async () => {
     console.log('handleAnalyse called');
     if (!image || !audioBlob) {
@@ -252,6 +310,8 @@ export default function useHomePageLogic() {
       isDarkMode,
       stream,
       updateTrigger,
+      isEditMode,
+      editRecord,
     },
     refs: {
       mediaRecorderRef,
@@ -274,6 +334,7 @@ export default function useHomePageLogic() {
       handleAnalyse,
       toggleDarkMode,
       handleRecapture,
+      handleAudioRecording,
     },
   };
 }
