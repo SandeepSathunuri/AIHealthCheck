@@ -489,11 +489,19 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 if __name__ == "__main__":
     import uvicorn
+    import os
+    
+    # Get port from environment (for Railway, Render, Heroku)
+    port = int(os.environ.get("PORT", 8080))
+    
+    # Use single worker for free tier deployments
+    workers = 1 if settings.ENVIRONMENT == "production" else 1
+    
     uvicorn.run(
         app, 
         host="0.0.0.0", 
-        port=8080,
-        workers=settings.WORKER_PROCESSES if settings.ENVIRONMENT == "production" else 1,
+        port=port,
+        workers=workers,
         log_level=settings.LOG_LEVEL.lower(),
         access_log=True
     )
