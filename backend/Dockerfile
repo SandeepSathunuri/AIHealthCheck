@@ -1,4 +1,4 @@
-# Use Python 3.11 (more stable than 3.13 for deployment)
+# Use Python 3.11 (stable version without Rust compilation issues)
 FROM python:3.11-slim
 
 # Set environment variables
