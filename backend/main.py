@@ -191,7 +191,7 @@ async def update_profile(
         
         # Email format validation
         import re
-        email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+'$'
+        email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
         if not re.match(email_pattern, email):
             raise HTTPException(status_code=400, detail="Invalid email format")
         
