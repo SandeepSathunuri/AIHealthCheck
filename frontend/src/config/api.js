@@ -45,6 +45,12 @@ export const getHistoryItemUrl = (id) => {
   return `${API_BASE_URL}/medibot/history/${id}`;
 };
 
+// Utility function to fix localhost URLs from backend responses
+export const fixBackendUrl = (url) => {
+  if (!url) return url;
+  return url.replace('http://localhost:8080', API_BASE_URL);
+};
+
 export default {
   API_BASE_URL,
   API_ENDPOINTS,

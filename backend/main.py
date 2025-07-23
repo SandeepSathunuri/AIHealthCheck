@@ -36,7 +36,8 @@ def analyze_image_with_query(query, encoded_image, model=None):
 
 def text_to_speech_with_elevenlabs(text):
     """Fallback TTS for deployment"""
-    return b"mock_audio_data"  # Return mock audio data
+    # Return None to indicate no audio available
+    return None
 
 def transcribe_with_groq(GROQ_API_KEY, audio_bytes, stt_model):
     """Fallback transcription for deployment"""
@@ -258,9 +259,9 @@ def process_audio_image(audio_data, image_data, current_user):
 
     # Generate audio directly
     output_audio = text_to_speech_with_elevenlabs(doctor_response)
-    if output_audio is None:
-        raise HTTPException(status_code=500, detail="Failed to generate audio for storage")
-    audio_output_id = fs.put(output_audio, filename="doctor_response.mp3")
+    audio_output_id = None
+    if output_audio is not None:
+        audio_output_id = fs.put(output_audio, filename="doctor_response.mp3")
 
     diagnosis = {
         "userEmail": current_user["email"],
@@ -276,13 +277,18 @@ def process_audio_image(audio_data, image_data, current_user):
     # Get the base URL from environment or use default
     base_url = os.environ.get("BASE_URL", "https://aihealthcheck-scoe.onrender.com")
     
-    return {
+    response_data = {
         "message": "Record saved successfully",
         "transcription": transcription,
         "doctor_response": doctor_response,
-        "image_url": f"{base_url}/medibot/image/{image_id}",
-        "audio_url": f"{base_url}/medibot/audio/{audio_output_id}"
+        "image_url": f"{base_url}/medibot/image/{image_id}"
     }
+    
+    # Only include audio_url if audio was generated
+    if audio_output_id:
+        response_data["audio_url"] = f"{base_url}/medibot/audio/{audio_output_id}"
+    
+    return response_data
 
 @app.post("/medibot/process")
 async def process(audio: UploadFile = File(...), image: UploadFile = File(...), current_user: dict = Depends(get_current_user)):

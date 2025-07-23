@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom'; // Added useLocation
 import { handleSuccess, handleError } from '../pages/utils';
 import { useThemeMode } from '../context/ThemeContext';
-import { API_ENDPOINTS, getImageUrl, getAudioUrl, getHistoryItemUrl } from '../config/api';
+import { API_ENDPOINTS, getImageUrl, getAudioUrl, getHistoryItemUrl, fixBackendUrl } from '../config/api';
 
 export default function useHomePageLogic() {
   const navigate = useNavigate();
@@ -279,13 +279,17 @@ export default function useHomePageLogic() {
       setTranscriptionDisplay(result.transcription || 'Transcription available in audio'); // Use transcription from response
       handleSuccess('Analysis complete');
 
-      // Trigger auto-play after state update
+      // Trigger auto-play after state update (only if audio is available)
       if (result.audio_url) {
-        const audio = new Audio(result.audio_url);
+        // Fix localhost URLs to use the correct Render URL
+        const audioUrl = fixBackendUrl(result.audio_url);
+        const audio = new Audio(audioUrl);
         audio.play().catch((err) => {
           console.error('Auto-play failed:', err);
-          handleError('Auto-play blocked by browser. Use controls in ResultsPanel to play.');
+          handleError('Audio playback not available in demo mode.');
         });
+      } else {
+        console.log('No audio generated - TTS service not available in demo mode');
       }
     } catch (err) {
       console.error('Analysis error:', err);

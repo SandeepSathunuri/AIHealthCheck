@@ -61,13 +61,26 @@ const AIAnalysisResults = ({
         currentAudio.play();
         setIsPlaying(true);
       } else {
-        const audio = new Audio(audioUrl);
+        // Fix localhost URLs to use the correct Render URL
+        const fixedAudioUrl = audioUrl.replace('http://localhost:8080', 'https://aihealthcheck-scoe.onrender.com');
+        const audio = new Audio(fixedAudioUrl);
         setCurrentAudio(audio);
 
         audio.onended = () => setIsPlaying(false);
-        audio.onerror = () => setIsPlaying(false);
+        audio.onerror = (e) => {
+          console.error('Audio playback error:', e);
+          setIsPlaying(false);
+        };
 
-        audio.play();
+        // Add audio loading and playback with better error handling
+        audio.onloadeddata = () => {
+          console.log('Audio loaded successfully');
+        };
+
+        audio.play().catch(error => {
+          console.error('Audio play failed:', error);
+          setIsPlaying(false);
+        });
         setIsPlaying(true);
       }
     }
@@ -296,7 +309,7 @@ const AIAnalysisResults = ({
                     Your spoken symptoms and concerns
                   </Typography>
                 </Box>
-                {audioUrl && (
+                {audioUrl ? (
                   <Tooltip title={isPlaying ? "Pause Audio" : "Play Audio"}>
                     <IconButton
                       onClick={(e) => {
@@ -306,6 +319,12 @@ const AIAnalysisResults = ({
                       sx={{ color: isPlaying ? "#fa709a" : "#43e97b" }}
                     >
                       {isPlaying ? <Pause /> : <PlayArrow />}
+                    </IconButton>
+                  </Tooltip>
+                ) : (
+                  <Tooltip title="Audio not available in demo mode">
+                    <IconButton disabled sx={{ color: "#666" }}>
+                      <VolumeOff />
                     </IconButton>
                   </Tooltip>
                 )}

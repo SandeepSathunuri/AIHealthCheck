@@ -45,7 +45,7 @@ const HistorySearchBar = ({
     >
       <Box sx={{ p: 3 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={5}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <TextField
               fullWidth
               placeholder="Search medical records..."
@@ -91,7 +91,7 @@ const HistorySearchBar = ({
               }}
             />
           </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid size={{ xs: 12, md: 2 }}>
             <FormControl fullWidth variant="outlined">
               <InputLabel
                 id="search-field-label"
@@ -128,7 +128,7 @@ const HistorySearchBar = ({
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid size={{ xs: 12, md: 2 }}>
             <Button
               fullWidth
               variant="outlined"
@@ -164,7 +164,7 @@ const HistorySearchBar = ({
               )}
             </Button>
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "100%" }}>
               <Typography
                 variant="body2"
