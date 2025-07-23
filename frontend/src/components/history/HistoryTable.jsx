@@ -20,6 +20,7 @@ import {
   Visibility,
 } from '@mui/icons-material';
 import GlassCard from '../ui/GlassCard';
+import { getAudioUrl, getImageUrl } from '../../config/api';
 
 const HistoryTable = ({
   records,
@@ -56,7 +57,7 @@ const HistoryTable = ({
         audioElements[playingAudio].currentTime = 0;
       }
 
-      const audioUrl = `http://localhost:8080/${audioPath}`;
+      const audioUrl = getAudioUrl(audioPath);
       let audio = audioElements[recordId];
 
       if (!audio) {
@@ -205,13 +206,13 @@ const HistoryTable = ({
                         }}
                         onClick={() =>
                           onViewImage(
-                            `http://localhost:8080/${record.imagePath}`,
+                            getImageUrl(record.imagePath),
                             `Analysis #${record.id?.slice(-6)}`
                           )
                         }
                       >
                         <img
-                          src={`http://localhost:8080/${record.imagePath}`}
+                          src={getImageUrl(record.imagePath)}
                           alt="Medical"
                           style={{
                             width: "100%",
@@ -240,7 +241,7 @@ const HistoryTable = ({
                           size="small"
                           onClick={() =>
                             onViewImage(
-                              `http://localhost:8080/${record.imagePath}`,
+                              getImageUrl(record.imagePath),
                               `Analysis #${record.id?.slice(-6)}`
                             )
                           }

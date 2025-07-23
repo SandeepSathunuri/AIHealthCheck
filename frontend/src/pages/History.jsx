@@ -20,6 +20,7 @@ import EmptyHistoryState from "../components/history/EmptyHistoryState";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useThemeMode } from "../context/ThemeContext";
+import { API_ENDPOINTS, getHistoryItemUrl } from "../config/api";
 
 // All components are now imported from separate files
 
@@ -231,7 +232,7 @@ const History = () => {
           return;
         }
 
-        const res = await fetch("http://localhost:8080/medibot/history", {
+        const res = await fetch(API_ENDPOINTS.HISTORY, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -268,7 +269,7 @@ const History = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8080/medibot/history/${id}`, {
+      const res = await fetch(getHistoryItemUrl(id), {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

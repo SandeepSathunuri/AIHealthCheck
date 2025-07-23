@@ -191,7 +191,7 @@ async def update_profile(
         
         # Email format validation
         import re
-        email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+        email_pattern = r"^[^\s@]+@[^\s@]+\.[^\s@]+$"
         if not re.match(email_pattern, email):
             raise HTTPException(status_code=400, detail="Invalid email format")
         
@@ -273,12 +273,15 @@ def process_audio_image(audio_data, image_data, current_user):
     }
     diagnoses_collection.insert_one(diagnosis)
 
+    # Get the base URL from environment or use default
+    base_url = os.environ.get("BASE_URL", "https://aihealthcheck-scoe.onrender.com")
+    
     return {
         "message": "Record saved successfully",
         "transcription": transcription,
         "doctor_response": doctor_response,
-        "image_url": f"http://localhost:8080/medibot/image/{image_id}",
-        "audio_url": f"http://localhost:8080/medibot/audio/{audio_output_id}"
+        "image_url": f"{base_url}/medibot/image/{image_id}",
+        "audio_url": f"{base_url}/medibot/audio/{audio_output_id}"
     }
 
 @app.post("/medibot/process")

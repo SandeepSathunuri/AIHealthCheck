@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom'; // Added useLocation
 import { handleSuccess, handleError } from '../pages/utils';
 import { useThemeMode } from '../context/ThemeContext';
+import { API_ENDPOINTS, getImageUrl, getAudioUrl, getHistoryItemUrl } from '../config/api';
 
 export default function useHomePageLogic() {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export default function useHomePageLogic() {
   const [audioBlob, setAudioBlob] = useState(null);
   const [transcriptionDisplay, setTranscriptionDisplay] = useState(editRecord?.transcription || '');
   const [doctorResponse, setDoctorResponse] = useState(editRecord?.doctorResponse || '');
-  const [audioUrl, setAudioUrl] = useState(editRecord?.audioOutputPath ? `http://localhost:8080/${editRecord.audioOutputPath}` : '');
+  const [audioUrl, setAudioUrl] = useState(editRecord?.audioOutputPath ? getAudioUrl(editRecord.audioOutputPath) : '');
   const [isEditMode, setIsEditMode] = useState(!!editRecord);
   const [loading, setLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -62,7 +63,7 @@ export default function useHomePageLogic() {
       
       // Load existing image if available
       if (editRecord.imagePath) {
-        const imageUrl = `http://localhost:8080/${editRecord.imagePath}`;
+        const imageUrl = getImageUrl(editRecord.imagePath);
         console.log('Loading existing image from:', imageUrl);
         fetch(imageUrl)
           .then(response => {
@@ -85,7 +86,7 @@ export default function useHomePageLogic() {
 
       // Load existing audio if available
       if (editRecord.audioOutputPath) {
-        const audioUrl = `http://localhost:8080/${editRecord.audioOutputPath}`;
+        const audioUrl = getAudioUrl(editRecord.audioOutputPath);
         fetch(audioUrl)
           .then(response => response.blob())
           .then(blob => {
@@ -259,7 +260,7 @@ export default function useHomePageLogic() {
 
       const token = localStorage.getItem('token');
       console.log('Sending request with token:', token);
-      const url = editRecord?.id ? `http://localhost:8080/medibot/history/${editRecord.id}` : 'http://localhost:8080/medibot/process';
+      const url = editRecord?.id ? getHistoryItemUrl(editRecord.id) : API_ENDPOINTS.PROCESS;
       const method = editRecord?.id ? 'PUT' : 'POST';
       const response = await fetch(url, {
         method,

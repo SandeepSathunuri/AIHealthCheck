@@ -50,6 +50,7 @@ import LoadingSpinner from "../components/ui/LoadingSpinner";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useThemeMode } from "../context/ThemeContext";
+import { API_ENDPOINTS } from "../config/api";
 
 // Modern Header Component
 const ModernHeader = ({ onToggleSidebar, isDarkMode }) => {
@@ -324,7 +325,7 @@ const Profile = () => {
       }
 
       // Call backend API to update profile
-      const response = await fetch("http://localhost:8080/auth/profile", {
+      const response = await fetch(API_ENDPOINTS.PROFILE, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -366,7 +367,7 @@ const Profile = () => {
           return;
         }
 
-        const res = await fetch("http://localhost:8080/medibot/history", {
+        const res = await fetch(API_ENDPOINTS.HISTORY, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
