@@ -43,6 +43,12 @@ export default function useHomePageLogic() {
     }
   }, [navigate]);
 
+  // Debug effect to track doctorResponse changes
+  useEffect(() => {
+    console.log('doctorResponse state changed:', doctorResponse);
+    console.log('doctorResponse length:', doctorResponse?.length);
+  }, [doctorResponse]);
+
   useEffect(() => {
     console.log('useEffect: Updating imageUrl');
     if (imageUrlRef.current) URL.revokeObjectURL(imageUrlRef.current);
@@ -274,9 +280,20 @@ export default function useHomePageLogic() {
 
       const result = await response.json();
       console.log('Response received:', result);
-      setDoctorResponse(result.doctor_response || '');
-      setAudioUrl(result.audio_url || '');
-      setTranscriptionDisplay(result.transcription || 'Transcription available in audio'); // Use transcription from response
+      console.log('Doctor response length:', result.doctor_response?.length);
+      console.log('Doctor response content:', result.doctor_response);
+      
+      // Ensure we have the full response before setting state
+      const doctorResponseText = result.doctor_response || '';
+      const audioUrlText = result.audio_url || '';
+      const transcriptionText = result.transcription || 'Transcription available in audio';
+      
+      console.log('Setting doctorResponse to:', doctorResponseText);
+      console.log('doctorResponseText length:', doctorResponseText.length);
+      
+      setDoctorResponse(doctorResponseText);
+      setAudioUrl(audioUrlText);
+      setTranscriptionDisplay(transcriptionText);
       handleSuccess('Analysis complete');
 
       // Trigger auto-play after state update (only if audio is available)

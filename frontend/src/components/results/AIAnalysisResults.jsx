@@ -50,6 +50,10 @@ const AIAnalysisResults = ({
   const [currentAudio, setCurrentAudio] = useState(null);
   const [expandedSection, setExpandedSection] = useState("analysis");
 
+  // Debug logging
+  console.log('AIAnalysisResults received aiResponse:', aiResponse);
+  console.log('AIAnalysisResults aiResponse length:', aiResponse?.length);
+
   const handlePlayAudio = () => {
     if (!audioUrl) return;
 

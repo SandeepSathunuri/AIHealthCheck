@@ -5,7 +5,7 @@
 
 export const productionConfig = {
   // API Configuration
-  API_BASE_URL: process.env.REACT_APP_API_URL || 'https://aihealthcheck-scoe.onrender.com',
+  API_BASE_URL: process.env.REACT_APP_API_URL || 'https://aihealthcheck-zzqr.onrender.com',
   
   // Feature Flags
   FEATURES: {

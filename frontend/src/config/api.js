@@ -8,8 +8,8 @@ const getApiBaseUrl = () => {
   ) {
     return process.env.REACT_APP_API_URL;
   }
-  // Fallback to production URL
-  return "https://aihealthcheck-scoe.onrender.com";
+  // Fallback to new production URL
+  return "https://aihealthcheck-zzqr.onrender.com";
 };
 
 export const API_BASE_URL = getApiBaseUrl();
@@ -48,7 +48,9 @@ export const getHistoryItemUrl = (id) => {
 // Utility function to fix localhost URLs from backend responses
 export const fixBackendUrl = (url) => {
   if (!url) return url;
-  return url.replace('http://localhost:8080', API_BASE_URL);
+  return url
+    .replace('http://localhost:8080', API_BASE_URL)
+    .replace('https://aihealthcheck-scoe.onrender.com', API_BASE_URL);
 };
 
 export default {

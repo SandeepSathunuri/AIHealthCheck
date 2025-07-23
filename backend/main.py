@@ -275,7 +275,7 @@ def process_audio_image(audio_data, image_data, current_user):
     diagnoses_collection.insert_one(diagnosis)
 
     # Get the base URL from environment or use default
-    base_url = os.environ.get("BASE_URL", "https://aihealthcheck-scoe.onrender.com")
+    base_url = os.environ.get("BASE_URL", "https://aihealthcheck-zzqr.onrender.com")
     
     response_data = {
         "message": "Record saved successfully",
