@@ -23,6 +23,8 @@ function AppContent() {
   const { isAuthenticated, loading } = useAuth();
 
   const PrivateRoute = ({ children }) => {
+    console.log('🔒 PrivateRoute check:', { loading, isAuthenticated });
+    
     if (loading) {
       return (
         <div style={{ 
@@ -37,7 +39,14 @@ function AppContent() {
         </div>
       );
     }
-    return isAuthenticated ? children : <Navigate to="/login" replace />;
+    
+    if (!isAuthenticated) {
+      console.log('🔒 Not authenticated, redirecting to login');
+      return <Navigate to="/login" replace />;
+    }
+    
+    console.log('🔒 Authenticated, rendering protected content');
+    return children;
   };
 
   const PageTransition = ({ children }) => (
@@ -63,7 +72,13 @@ function AppContent() {
             <Routes>
               <Route 
                 path="/" 
-                element={<Navigate to="/login" replace />} 
+                element={
+                  <PrivateRoute>
+                    <PageTransition>
+                      <Home />
+                    </PageTransition>
+                  </PrivateRoute>
+                } 
               />
               <Route 
                 path="/login" 

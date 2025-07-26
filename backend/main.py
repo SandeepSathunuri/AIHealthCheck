@@ -29,19 +29,27 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Fallback functions for deployment (AI features temporarily disabled)
-def analyze_image_with_query(query, encoded_image, model=None):
-    """Fallback image analysis for deployment"""
-    return "Based on the image provided, I can see medical-related content. For a proper medical analysis, please consult with a healthcare professional. This is a demo response while AI services are being configured."
+# Import real AI functions
+try:
+    from brain_of_the_doctor import analyze_image_with_query
+    from voice_of_the_patient import transcribe_with_groq
+    from voice_of_the_doctor import text_to_speech_with_elevenlabs
+    print("✅ Successfully imported real AI functions")
+except ImportError as e:
+    print(f"⚠️ Failed to import AI functions: {e}")
+    # Fallback functions for deployment (AI features temporarily disabled)
+    def analyze_image_with_query(query, encoded_image, model=None):
+        """Fallback image analysis for deployment"""
+        return "Based on the image provided, I can see medical-related content. For a proper medical analysis, please consult with a healthcare professional. This is a demo response while AI services are being configured."
 
-def text_to_speech_with_elevenlabs(text):
-    """Fallback TTS for deployment"""
-    # Return None to indicate no audio available
-    return None
+    def text_to_speech_with_elevenlabs(text):
+        """Fallback TTS for deployment"""
+        # Return None to indicate no audio available
+        return None
 
-def transcribe_with_groq(GROQ_API_KEY, audio_bytes, stt_model):
-    """Fallback transcription for deployment"""
-    return "Audio transcription: I can hear your medical concerns. Please describe your symptoms in detail for proper analysis."
+    def transcribe_with_groq(GROQ_API_KEY, audio_bytes, stt_model):
+        """Fallback transcription for deployment"""
+        return "Audio transcription: I can hear your medical concerns. Please describe your symptoms in detail for proper analysis."
 
 # MongoDB setup
 try:
@@ -148,7 +156,17 @@ async def signup(user: UserCreate):
         "email": user.email,
         "password": hash_password(user.password)
     })
-    return {"message": "Signup successful", "success": True}
+    # Generate token for automatic login after signup
+    token = create_access_token({"sub": user.email})
+    return {
+        "message": "Signup successful", 
+        "success": True,
+        "token": token,
+        "user": {
+            "email": user.email,
+            "name": user.name
+        }
+    }
 
 @app.post("/auth/login")
 async def login(user: UserLogin):
@@ -238,24 +256,22 @@ def process_audio_image(audio_data, image_data, current_user):
     image_id = fs.put(image_data)
     print(f"Debug: Stored audio_id: {audio_id}, image_id: {image_id}")
 
-    # Use ThreadPoolExecutor for parallel execution
-    with ThreadPoolExecutor() as executor:
-        transcription_future = executor.submit(
-            transcribe_with_groq,
-            GROQ_API_KEY=os.getenv("GROQ_API_KEY"),
-            audio_bytes=audio_data,
-            stt_model="whisper-large-v3"
-        )
-        encoded_image = base64.b64encode(image_data).decode('utf-8')
-        analysis_future = executor.submit(
-            analyze_image_with_query,
-            query=system_prompt + "placeholder",  # Updated with transcription result
-            encoded_image=encoded_image,
-            model="meta-llama/llama-4-scout-17b-16e-instruct"
-        )
-
-        transcription = transcription_future.result()
-        doctor_response = analysis_future.result().replace("placeholder", transcription)
+    # First get transcription, then analyze image with the transcription context
+    transcription = transcribe_with_groq(
+        GROQ_API_KEY=os.getenv("GROQ_API_KEY"),
+        audio_bytes=audio_data,
+        stt_model="whisper-large-v3"
+    )
+    
+    # Combine system prompt with transcription for better context
+    encoded_image = base64.b64encode(image_data).decode('utf-8')
+    full_query = f"{system_prompt}\n\nPatient's description: {transcription}"
+    
+    doctor_response = analyze_image_with_query(
+        query=full_query,
+        encoded_image=encoded_image,
+        model="meta-llama/llama-4-scout-17b-16e-instruct"
+    )
 
     # Generate audio directly
     output_audio = text_to_speech_with_elevenlabs(doctor_response)

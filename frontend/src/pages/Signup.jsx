@@ -9,8 +9,13 @@ import {
   InputAdornment,
   IconButton,
   Divider,
-  useTheme,
-  useMediaQuery,
+  Stack,
+  Card,
+  CardContent,
+  Chip,
+  Avatar,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import {
   Person,
@@ -18,183 +23,98 @@ import {
   Lock,
   Visibility,
   VisibilityOff,
-  Google,
-  GitHub,
+  LocalHospital,
+  Security,
+  Verified,
   ArrowForward,
+  PersonAdd,
+  CheckCircle,
 } from "@mui/icons-material";
 import { motion, AnimatePresence } from "framer-motion";
 import { ThemeProvider } from "@mui/material/styles";
-import { darkTheme } from "../styles/theme";
-import GlassCard from "../components/ui/GlassCard";
-import AnimatedButton from "../components/ui/AnimatedButton";
+import {
+  premiumTheme,
+  premiumLightTheme,
+} from "../styles/premiumTheme";
+import PremiumButton from "../components/ui/PremiumButton";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useThemeMode } from "../context/ThemeContext";
 
-const FloatingParticles = () => {
-  const particles = Array.from({ length: 50 }, (_, i) => i);
-
-  return (
-    <Box
-      sx={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        overflow: "hidden",
-        zIndex: 0,
-      }}
-    >
-      {particles.map((particle) => (
-        <motion.div
-          key={particle}
-          style={{
-            position: "absolute",
-            width: Math.random() * 4 + 1,
-            height: Math.random() * 4 + 1,
-            background: "rgba(255, 255, 255, 0.3)",
-            borderRadius: "50%",
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }}
-          animate={{
-            y: [0, -30, 0],
-            opacity: [0, 1, 0],
-          }}
-          transition={{
-            duration: Math.random() * 3 + 2,
-            repeat: Infinity,
-            delay: Math.random() * 2,
-          }}
-        />
-      ))}
-    </Box>
-  );
-};
-
-const SocialLoginButton = ({ icon, label, onClick, gradient }) => (
-  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-    <AnimatedButton
-      fullWidth
-      variant="outlined"
-      startIcon={icon}
-      onClick={onClick}
-      sx={{
-        borderColor: "rgba(255, 255, 255, 0.2)",
-        color: "white",
-        background: "rgba(255, 255, 255, 0.05)",
-        "&:hover": {
-          borderColor: "rgba(255, 255, 255, 0.4)",
-          background: "rgba(255, 255, 255, 0.1)",
-        },
-      }}
-    >
-      {label}
-    </AnimatedButton>
-  </motion.div>
-);
-
-const Signup = () => {
+const ProfessionalSignUp = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
-
+  const [loading, setLoading] = useState(false);
+  
   const navigate = useNavigate();
   const { register } = useAuth();
-  const theme = darkTheme;
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { isDarkMode } = useThemeMode();
 
-  const handleInputChange = (field) => (event) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: event.target.value,
-    }));
-    if (error) setError("");
+  const handleChange = (field) => (e) => {
+    setFormData({ ...formData, [field]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
-    // Basic validation
-    if (!formData.name || !formData.email || !formData.password) {
-      setError("All fields are required");
-      setLoading(false);
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters long");
-      setLoading(false);
+    if (!agreedToTerms) {
+      setError("Please agree to the terms and conditions");
       return;
     }
+
+    setLoading(true);
 
     try {
       const result = await register(formData.name, formData.email, formData.password);
-      
       if (result.success) {
-        setSuccess(true);
-        setTimeout(() => {
-          navigate("/home");
-        }, 1000);
+        navigate("/");
       } else {
-        setError(result.message || "Registration failed");
+        setError(result.message || "Registration failed. Please try again.");
       }
     } catch (err) {
-      setError("Network error. Please try again.");
+      setError(err.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        duration: 0.6,
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        duration: 0.5,
-        ease: [0.4, 0, 0.2, 1],
-      },
-    },
-  };
+  const benefits = [
+    { icon: <Security />, text: "Enterprise Security", desc: "Bank-level encryption" },
+    { icon: <Verified />, text: "HIPAA Compliant", desc: "Medical data protection" },
+    { icon: <LocalHospital />, text: "AI Powered", desc: "Advanced medical analysis" },
+  ];
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={isDarkMode ? premiumTheme : premiumLightTheme}>
       <Box
         sx={{
           minHeight: "100vh",
-          background:
-            "linear-gradient(135deg, #0a0a1e 0%, #1a1a3a 50%, #2d1b69 100%)",
-          position: "relative",
+          background: isDarkMode
+            ? "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)"
+            : "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          position: "relative",
           overflow: "hidden",
+          py: 4,
         }}
       >
-        {/* Animated Background */}
-        <FloatingParticles />
-
-        {/* Background Gradients */}
+        {/* Background Pattern */}
         <Box
           sx={{
             position: "absolute",
@@ -202,210 +122,475 @@ const Signup = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background:
-              "radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.4), transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.4), transparent 50%)",
+            backgroundImage: isDarkMode
+              ? "radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.1) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(16, 185, 129, 0.1) 0%, transparent 50%)"
+              : "radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.05) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(16, 185, 129, 0.05) 0%, transparent 50%)",
             zIndex: 0,
           }}
         />
 
-        <Container maxWidth="sm" sx={{ position: "relative", zIndex: 1 }}>
+        <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
           <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            style={{ width: "100%", maxWidth: "1000px", margin: "0 auto" }}
           >
-            <GlassCard
-              padding={isMobile ? 3 : 4}
-              glowEffect
-              gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                gap: 0,
+                borderRadius: "24px",
+                overflow: "hidden",
+                background: isDarkMode
+                  ? "rgba(255, 255, 255, 0.05)"
+                  : "rgba(255, 255, 255, 0.9)",
+                backdropFilter: "blur(20px)",
+                border: `1px solid ${
+                  isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)"
+                }`,
+                boxShadow: isDarkMode
+                  ? "0 25px 50px rgba(0, 0, 0, 0.3)"
+                  : "0 25px 50px rgba(0, 0, 0, 0.1)",
+              }}
             >
-              <Box sx={{ textAlign: "center", mb: 4 }}>
-                <motion.div variants={itemVariants}>
-                  <Typography
-                    variant="h3"
-                    sx={{
-                      fontWeight: 700,
-                      background:
-                        "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                      backgroundClip: "text",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      mb: 1,
-                    }}
-                  >
-                    Join Medical AI
-                  </Typography>
-                </motion.div>
-
-                <motion.div variants={itemVariants}>
-                  <Typography
-                    variant="body1"
-                    sx={{ color: "rgba(255, 255, 255, 0.7)" }}
-                  >
-                    Create your account to access AI-powered medical analysis
-                  </Typography>
-                </motion.div>
-              </Box>
-
-              <AnimatePresence>
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <Alert severity="error" sx={{ mb: 3 }}>
-                      {error}
-                    </Alert>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <Box component="form" onSubmit={handleSubmit}>
-                <motion.div variants={itemVariants}>
-                  <TextField
-                    fullWidth
-                    label="Full Name"
-                    type="text"
-                    value={formData.name}
-                    onChange={handleInputChange("name")}
-                    required
-                    sx={{ mb: 3 }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Person sx={{ color: "rgba(255, 255, 255, 0.5)" }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </motion.div>
-
-                <motion.div variants={itemVariants}>
-                  <TextField
-                    fullWidth
-                    label="Email Address"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleInputChange("email")}
-                    required
-                    sx={{ mb: 3 }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Email sx={{ color: "rgba(255, 255, 255, 0.5)" }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </motion.div>
-
-                <motion.div variants={itemVariants}>
-                  <TextField
-                    fullWidth
-                    label="Password"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.password}
-                    onChange={handleInputChange("password")}
-                    required
-                    sx={{ mb: 4 }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Lock sx={{ color: "rgba(255, 255, 255, 0.5)" }} />
-                        </InputAdornment>
-                      ),
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            onClick={() => setShowPassword(!showPassword)}
-                            edge="end"
-                            sx={{ color: "rgba(255, 255, 255, 0.5)" }}
-                          >
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </motion.div>
-
-                <motion.div variants={itemVariants}>
-                  <AnimatedButton
-                    type="submit"
-                    fullWidth
-                    size="large"
-                    loading={loading}
-                    success={success}
-                    gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-                    glowEffect
-                    endIcon={<ArrowForward />}
-                    sx={{ mb: 3 }}
-                  >
-                    Create Account
-                  </AnimatedButton>
-                </motion.div>
-
-                <motion.div variants={itemVariants}>
-                  <Divider
-                    sx={{
-                      mb: 3,
-                      "&::before, &::after": {
-                        borderColor: "rgba(255, 255, 255, 0.2)",
-                      },
-                    }}
-                  >
+              {/* Left Panel - Registration Form */}
+              <Box sx={{ p: 6 }}>
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                >
+                  <Box sx={{ mb: 4 }}>
                     <Typography
-                      variant="body2"
-                      sx={{ color: "rgba(255, 255, 255, 0.5)" }}
+                      variant="h4"
+                      sx={{
+                        fontWeight: 700,
+                        color: isDarkMode ? "white" : "#1e293b",
+                        mb: 1,
+                      }}
                     >
-                      Or continue with
+                      Join MediAI Pro
                     </Typography>
-                  </Divider>
-                </motion.div>
-
-                <motion.div variants={itemVariants}>
-                  <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-                    <SocialLoginButton
-                      icon={<Google />}
-                      label="Google"
-                      onClick={() => console.log("Google signup")}
-                    />
-                    <SocialLoginButton
-                      icon={<GitHub />}
-                      label="GitHub"
-                      onClick={() => console.log("GitHub signup")}
-                    />
-                  </Box>
-                </motion.div>
-
-                <motion.div variants={itemVariants}>
-                  <Box sx={{ textAlign: "center" }}>
                     <Typography
-                      variant="body2"
-                      sx={{ color: "rgba(255, 255, 255, 0.7)" }}
+                      variant="body1"
+                      sx={{
+                        color: isDarkMode ? "rgba(255,255,255,0.7)" : "#64748b",
+                      }}
                     >
-                      Already have an account?{" "}
-                      <Link
-                        onClick={() => navigate("/login")}
+                      Create your professional medical AI account
+                    </Typography>
+                  </Box>
+
+                  <form onSubmit={handleSubmit}>
+                    <Stack spacing={3}>
+                      <AnimatePresence>
+                        {error && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                          >
+                            <Alert severity="error" sx={{ borderRadius: "12px" }}>
+                              {error}
+                            </Alert>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      <TextField
+                        fullWidth
+                        label="Full Name"
+                        value={formData.name}
+                        onChange={handleChange("name")}
+                        required
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Person sx={{ color: "#3b82f6" }} />
+                            </InputAdornment>
+                          ),
+                        }}
                         sx={{
-                          color: "#667eea",
-                          textDecoration: "none",
-                          fontWeight: 600,
-                          cursor: "pointer",
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: "12px",
+                            background: isDarkMode
+                              ? "rgba(255, 255, 255, 0.05)"
+                              : "rgba(255, 255, 255, 0.8)",
+                            "&:hover fieldset": {
+                              borderColor: "#3b82f6",
+                            },
+                            "&.Mui-focused fieldset": {
+                              borderColor: "#3b82f6",
+                            },
+                          },
+                        }}
+                      />
+
+                      <TextField
+                        fullWidth
+                        label="Email Address"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleChange("email")}
+                        required
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Email sx={{ color: "#3b82f6" }} />
+                            </InputAdornment>
+                          ),
+                        }}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: "12px",
+                            background: isDarkMode
+                              ? "rgba(255, 255, 255, 0.05)"
+                              : "rgba(255, 255, 255, 0.8)",
+                            "&:hover fieldset": {
+                              borderColor: "#3b82f6",
+                            },
+                            "&.Mui-focused fieldset": {
+                              borderColor: "#3b82f6",
+                            },
+                          },
+                        }}
+                      />
+
+                      <TextField
+                        fullWidth
+                        label="Password"
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={handleChange("password")}
+                        required
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Lock sx={{ color: "#3b82f6" }} />
+                            </InputAdornment>
+                          ),
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                onClick={() => setShowPassword(!showPassword)}
+                                edge="end"
+                              >
+                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: "12px",
+                            background: isDarkMode
+                              ? "rgba(255, 255, 255, 0.05)"
+                              : "rgba(255, 255, 255, 0.8)",
+                            "&:hover fieldset": {
+                              borderColor: "#3b82f6",
+                            },
+                            "&.Mui-focused fieldset": {
+                              borderColor: "#3b82f6",
+                            },
+                          },
+                        }}
+                      />
+
+                      <TextField
+                        fullWidth
+                        label="Confirm Password"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={formData.confirmPassword}
+                        onChange={handleChange("confirmPassword")}
+                        required
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Lock sx={{ color: "#3b82f6" }} />
+                            </InputAdornment>
+                          ),
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                edge="end"
+                              >
+                                {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: "12px",
+                            background: isDarkMode
+                              ? "rgba(255, 255, 255, 0.05)"
+                              : "rgba(255, 255, 255, 0.8)",
+                            "&:hover fieldset": {
+                              borderColor: "#3b82f6",
+                            },
+                            "&.Mui-focused fieldset": {
+                              borderColor: "#3b82f6",
+                            },
+                          },
+                        }}
+                      />
+
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={agreedToTerms}
+                            onChange={(e) => setAgreedToTerms(e.target.checked)}
+                            sx={{
+                              color: "#3b82f6",
+                              "&.Mui-checked": {
+                                color: "#3b82f6",
+                              },
+                            }}
+                          />
+                        }
+                        label={
+                          <Typography variant="body2" sx={{ color: isDarkMode ? "rgba(255,255,255,0.7)" : "#64748b" }}>
+                            I agree to the{" "}
+                            <Link href="#" sx={{ color: "#3b82f6", textDecoration: "none" }}>
+                              Terms of Service
+                            </Link>{" "}
+                            and{" "}
+                            <Link href="#" sx={{ color: "#3b82f6", textDecoration: "none" }}>
+                              Privacy Policy
+                            </Link>
+                          </Typography>
+                        }
+                      />
+
+                      <PremiumButton
+                        type="submit"
+                        fullWidth
+                        size="large"
+                        loading={loading}
+                        gradient="linear-gradient(135deg, #10b981 0%, #059669 100%)"
+                        glow
+                        icon={<PersonAdd />}
+                        sx={{ py: 2, borderRadius: "12px" }}
+                      >
+                        Create Professional Account
+                      </PremiumButton>
+
+                      <Divider sx={{ my: 2 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: isDarkMode ? "rgba(255,255,255,0.5)" : "#94a3b8",
+                            px: 2,
+                          }}
+                        >
+                          Already have an account?
+                        </Typography>
+                      </Divider>
+
+                      <PremiumButton
+                        fullWidth
+                        variant="outlined"
+                        size="large"
+                        onClick={() => navigate("/login")}
+                        icon={<ArrowForward />}
+                        sx={{
+                          py: 2,
+                          borderRadius: "12px",
+                          borderColor: "#3b82f6",
+                          color: "#3b82f6",
                           "&:hover": {
-                            textDecoration: "underline",
+                            borderColor: "#1d4ed8",
+                            background: "rgba(59, 130, 246, 0.05)",
                           },
                         }}
                       >
-                        Sign in
-                      </Link>
-                    </Typography>
-                  </Box>
+                        Sign In Instead
+                      </PremiumButton>
+                    </Stack>
+                  </form>
                 </motion.div>
               </Box>
-            </GlassCard>
+
+              {/* Right Panel - Benefits */}
+              <Box
+                sx={{
+                  background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                  p: 6,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  textAlign: "center",
+                  color: "white",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
+                {/* Background Pattern */}
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundImage:
+                      "radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%), radial-gradient(circle at 70% 70%, rgba(255, 255, 255, 0.05) 0%, transparent 50%)",
+                    zIndex: 0,
+                  }}
+                />
+
+                <Box sx={{ position: "relative", zIndex: 1 }}>
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: 80,
+                        height: 80,
+                        borderRadius: "20px",
+                        background: "rgba(255, 255, 255, 0.2)",
+                        mb: 3,
+                        mx: "auto",
+                      }}
+                    >
+                      <LocalHospital sx={{ fontSize: 40, color: "white" }} />
+                    </Box>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.4 }}
+                  >
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        fontWeight: 700,
+                        mb: 2,
+                      }}
+                    >
+                      Why Choose MediAI Pro?
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        opacity: 0.9,
+                        mb: 4,
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      Join thousands of healthcare professionals using our advanced AI platform for medical analysis.
+                    </Typography>
+                  </motion.div>
+
+                  {/* Benefits */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.6 }}
+                  >
+                    <Stack spacing={3}>
+                      {benefits.map((benefit, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.5, delay: 0.8 + index * 0.1 }}
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 3,
+                              p: 3,
+                              borderRadius: "16px",
+                              background: "rgba(255, 255, 255, 0.1)",
+                              backdropFilter: "blur(10px)",
+                              textAlign: "left",
+                            }}
+                          >
+                            <Avatar
+                              sx={{
+                                width: 48,
+                                height: 48,
+                                background: "rgba(255, 255, 255, 0.2)",
+                              }}
+                            >
+                              {React.cloneElement(benefit.icon, { sx: { fontSize: 24 } })}
+                            </Avatar>
+                            <Box>
+                              <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                {benefit.text}
+                              </Typography>
+                              <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                                {benefit.desc}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </motion.div>
+                      ))}
+                    </Stack>
+                  </motion.div>
+
+                  {/* Trust Indicators */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 1.2 }}
+                  >
+                    <Box sx={{ mt: 4 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          opacity: 0.8,
+                          mb: 2,
+                        }}
+                      >
+                        Trusted by 10,000+ healthcare professionals
+                      </Typography>
+                      <Stack direction="row" spacing={1} justifyContent="center">
+                        <Chip
+                          label="HIPAA"
+                          size="small"
+                          sx={{
+                            background: "rgba(255, 255, 255, 0.2)",
+                            color: "white",
+                            border: "1px solid rgba(255, 255, 255, 0.3)",
+                          }}
+                        />
+                        <Chip
+                          label="SOC 2"
+                          size="small"
+                          sx={{
+                            background: "rgba(255, 255, 255, 0.2)",
+                            color: "white",
+                            border: "1px solid rgba(255, 255, 255, 0.3)",
+                          }}
+                        />
+                        <Chip
+                          label="ISO 27001"
+                          size="small"
+                          sx={{
+                            background: "rgba(255, 255, 255, 0.2)",
+                            color: "white",
+                            border: "1px solid rgba(255, 255, 255, 0.3)",
+                          }}
+                        />
+                      </Stack>
+                    </Box>
+                  </motion.div>
+                </Box>
+              </Box>
+            </Box>
           </motion.div>
         </Container>
       </Box>
@@ -413,4 +598,4 @@ const Signup = () => {
   );
 };
 
-export default Signup;
+export default ProfessionalSignUp;

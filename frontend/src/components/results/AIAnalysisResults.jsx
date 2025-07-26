@@ -53,6 +53,17 @@ const AIAnalysisResults = ({
   // Debug logging
   console.log('AIAnalysisResults received aiResponse:', aiResponse);
   console.log('AIAnalysisResults aiResponse length:', aiResponse?.length);
+  console.log('AIAnalysisResults all props:', { transcription, aiResponse, audioUrl, isLoading });
+
+  // Track prop changes
+  React.useEffect(() => {
+    console.log('AIAnalysisResults props changed:', { 
+      aiResponseLength: aiResponse?.length, 
+      transcriptionLength: transcription?.length,
+      audioUrl,
+      isLoading 
+    });
+  }, [aiResponse, transcription, audioUrl, isLoading]);
 
   const handlePlayAudio = () => {
     if (!audioUrl) return;
@@ -66,7 +77,7 @@ const AIAnalysisResults = ({
         setIsPlaying(true);
       } else {
         // Fix localhost URLs to use the correct Render URL
-        const fixedAudioUrl = audioUrl.replace('http://localhost:8080', 'https://aihealthcheck-scoe.onrender.com');
+        const fixedAudioUrl = audioUrl.replace('http://localhost:8080', 'https://aihealthcheck-zzqr.onrender.com/');
         const audio = new Audio(fixedAudioUrl);
         setCurrentAudio(audio);
 
@@ -165,38 +176,72 @@ const AIAnalysisResults = ({
 
   if (isLoading) {
     return (
-      <GlassCard>
-        <Box sx={{ p: 4, textAlign: "center" }}>
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          >
-            <Psychology sx={{ fontSize: 48, color: "#00d4ff", mb: 2 }} />
-          </motion.div>
-          <Typography
-            variant="h6"
-            sx={{ color: isDarkMode ? "white" : "black", mb: 2 }}
-          >
-            AI is analyzing your medical data...
-          </Typography>
-          <LinearProgress
+      <Box sx={{ textAlign: "center", py: 6 }}>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+        >
+          <Box
             sx={{
-              mb: 2,
-              "& .MuiLinearProgress-bar": {
-                background: "linear-gradient(90deg, #00d4ff, #0099cc)",
-              },
-            }}
-          />
-          <Typography
-            variant="body2"
-            sx={{
-              color: isDarkMode ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 80,
+              height: 80,
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+              mb: 3,
+              boxShadow: "0 8px 32px rgba(59, 130, 246, 0.3)",
             }}
           >
-            Processing voice input and medical image...
-          </Typography>
-        </Box>
-      </GlassCard>
+            <Psychology sx={{ fontSize: 40, color: "white" }} />
+          </Box>
+        </motion.div>
+        <Typography
+          variant="h5"
+          sx={{ 
+            color: isDarkMode ? "white" : "#1e293b", 
+            mb: 2,
+            fontWeight: 600,
+          }}
+        >
+          AI Medical Analysis in Progress
+        </Typography>
+        <Typography
+          variant="body1"
+          sx={{
+            color: isDarkMode ? "rgba(255,255,255,0.7)" : "#64748b",
+            mb: 3,
+            maxWidth: 400,
+            mx: "auto",
+          }}
+        >
+          Our advanced AI is carefully analyzing your medical data to provide accurate insights and recommendations.
+        </Typography>
+        <LinearProgress
+          sx={{
+            maxWidth: 300,
+            mx: "auto",
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+            "& .MuiLinearProgress-bar": {
+              background: "linear-gradient(90deg, #3b82f6 0%, #10b981 100%)",
+              borderRadius: 4,
+            },
+          }}
+        />
+        <Typography
+          variant="caption"
+          sx={{
+            display: "block",
+            mt: 2,
+            color: isDarkMode ? "rgba(255,255,255,0.5)" : "#94a3b8",
+          }}
+        >
+          This may take a few seconds...
+        </Typography>
+      </Box>
     );
   }
 
@@ -479,7 +524,51 @@ const AIAnalysisResults = ({
                         fontStyle: aiResponse ? "normal" : "italic",
                       }}
                     >
-                      {aiResponse || "No AI analysis available"}
+                      {aiResponse || (
+                        <Box sx={{ textAlign: "center", py: 4 }}>
+                          <Box
+                            sx={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: 64,
+                              height: 64,
+                              borderRadius: "50%",
+                              background: isDarkMode 
+                                ? "rgba(255,255,255,0.05)" 
+                                : "rgba(0,0,0,0.05)",
+                              mb: 2,
+                            }}
+                          >
+                            <Assessment sx={{ 
+                              fontSize: 32, 
+                              color: isDarkMode 
+                                ? "rgba(255,255,255,0.3)" 
+                                : "rgba(0,0,0,0.3)" 
+                            }} />
+                          </Box>
+                          <Typography
+                            variant="h6"
+                            sx={{
+                              color: isDarkMode ? "rgba(255,255,255,0.7)" : "#64748b",
+                              mb: 1,
+                              fontWeight: 600,
+                            }}
+                          >
+                            Ready for Analysis
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: isDarkMode ? "rgba(255,255,255,0.5)" : "#94a3b8",
+                              maxWidth: 300,
+                              mx: "auto",
+                            }}
+                          >
+                            Upload a medical image and record your voice to get started with AI-powered medical analysis.
+                          </Typography>
+                        </Box>
+                      )}
                     </Typography>
                   </CardContent>
                 </Card>

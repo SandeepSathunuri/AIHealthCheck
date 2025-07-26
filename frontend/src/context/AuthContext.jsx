@@ -67,6 +67,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('🔐 Attempting login for:', email);
       const response = await fetch(API_ENDPOINTS.LOGIN, {
         method: 'POST',
         headers: {
@@ -76,9 +77,12 @@ export const AuthProvider = ({ children }) => {
       });
 
       const data = await response.json();
+      console.log('🔐 Login response:', { status: response.status, data });
 
       if (response.ok && data.success) {
         const { token, user: userData } = data;
+        
+        console.log('✅ Login successful, storing data:', { token: token?.substring(0, 20) + '...', userData });
         
         // Store token and user data
         localStorage.setItem('token', token);
@@ -87,16 +91,18 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
         return { success: true, user: userData };
       } else {
-        return { success: false, message: data.message || 'Login failed' };
+        console.log('❌ Login failed:', data);
+        return { success: false, message: data.detail || data.message || 'Login failed' };
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
       return { success: false, message: 'Network error. Please try again.' };
     }
   };
 
   const register = async (name, email, password) => {
     try {
+      console.log('📝 Attempting registration for:', { name, email });
       const response = await fetch(API_ENDPOINTS.SIGNUP, {
         method: 'POST',
         headers: {
@@ -106,9 +112,12 @@ export const AuthProvider = ({ children }) => {
       });
 
       const data = await response.json();
+      console.log('📝 Registration response:', { status: response.status, data });
 
       if (response.ok && data.success) {
         const { token, user: userData } = data;
+        
+        console.log('✅ Registration successful, storing data:', { token: token?.substring(0, 20) + '...', userData });
         
         // Store token and user data
         localStorage.setItem('token', token);
@@ -117,10 +126,11 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
         return { success: true, user: userData };
       } else {
-        return { success: false, message: data.message || 'Registration failed' };
+        console.log('❌ Registration failed:', data);
+        return { success: false, message: data.detail || data.message || 'Registration failed' };
       }
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('❌ Registration error:', error);
       return { success: false, message: 'Network error. Please try again.' };
     }
   };
