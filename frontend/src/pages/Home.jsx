@@ -26,7 +26,6 @@ import PremiumButton from "../components/ui/PremiumButton";
 import ModernSidebar from "../components/ui/ModernSidebar";
 import ProfessionalHeader from "../components/ui/ProfessionalHeader";
 import MedicalDashboard from "../components/ui/MedicalDashboard";
-import AnalysisWorkflow from "../components/ui/AnalysisWorkflow";
 import SimpleAudioRecorder from "../components/ui/SimpleAudioRecorder";
 import SmartImageUploader from "../components/enterprise/SmartImageUploader";
 import AIAnalysisResults from "../components/results/AIAnalysisResults";
@@ -240,15 +239,6 @@ const Home = () => {
 
           {/* Medical Dashboard */}
           <MedicalDashboard isDarkMode={isDarkMode} />
-
-          {/* Analysis Workflow */}
-          <AnalysisWorkflow
-            audioBlob={audioBlob}
-            image={image}
-            loading={loading}
-            doctorResponse={doctorResponse}
-            isDarkMode={isDarkMode}
-          />
 
           {/* Main Analysis Interface */}
           <Grid container spacing={3}>

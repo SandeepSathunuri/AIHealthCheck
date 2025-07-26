@@ -29,27 +29,37 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Import real AI functions
+# Import real AI functions with detailed error handling
+print("🔍 Attempting to import AI functions...")
+
 try:
+    print("📊 Importing brain_of_the_doctor...")
     from brain_of_the_doctor import analyze_image_with_query
-    from voice_of_the_patient import transcribe_with_groq
-    from voice_of_the_doctor import text_to_speech_with_elevenlabs
-    print("✅ Successfully imported real AI functions")
+    print("✅ Successfully imported analyze_image_with_query")
 except ImportError as e:
-    print(f"⚠️ Failed to import AI functions: {e}")
-    # Fallback functions for deployment (AI features temporarily disabled)
+    print(f"❌ Failed to import brain_of_the_doctor: {e}")
     def analyze_image_with_query(query, encoded_image, model=None):
-        """Fallback image analysis for deployment"""
         return "Based on the image provided, I can see medical-related content. For a proper medical analysis, please consult with a healthcare professional. This is a demo response while AI services are being configured."
 
+try:
+    print("🎤 Importing voice_of_the_patient...")
+    from voice_of_the_patient import transcribe_with_groq
+    print("✅ Successfully imported transcribe_with_groq")
+except ImportError as e:
+    print(f"❌ Failed to import voice_of_the_patient: {e}")
+    def transcribe_with_groq(GROQ_API_KEY, audio_bytes, stt_model):
+        return "Audio transcription: I can hear your medical concerns. Please describe your symptoms in detail for proper analysis."
+
+try:
+    print("🔊 Importing voice_of_the_doctor...")
+    from voice_of_the_doctor import text_to_speech_with_elevenlabs
+    print("✅ Successfully imported text_to_speech_with_elevenlabs")
+except ImportError as e:
+    print(f"❌ Failed to import voice_of_the_doctor: {e}")
     def text_to_speech_with_elevenlabs(text):
-        """Fallback TTS for deployment"""
-        # Return None to indicate no audio available
         return None
 
-    def transcribe_with_groq(GROQ_API_KEY, audio_bytes, stt_model):
-        """Fallback transcription for deployment"""
-        return "Audio transcription: I can hear your medical concerns. Please describe your symptoms in detail for proper analysis."
+print("🔍 AI function imports completed")
 
 # MongoDB setup
 try:
@@ -252,32 +262,42 @@ async def update_profile(
 
 # ---------------------- Medibot Routes ----------------------
 def process_audio_image(audio_data, image_data, current_user):
+    print(f"🔄 Starting process_audio_image for user: {current_user.get('email', 'unknown')}")
+    
     audio_id = fs.put(audio_data)
     image_id = fs.put(image_data)
-    print(f"Debug: Stored audio_id: {audio_id}, image_id: {image_id}")
+    print(f"💾 Stored audio_id: {audio_id}, image_id: {image_id}")
 
     # First get transcription, then analyze image with the transcription context
+    print(f"🎤 Starting transcription with audio size: {len(audio_data)} bytes")
     transcription = transcribe_with_groq(
         GROQ_API_KEY=os.getenv("GROQ_API_KEY"),
         audio_bytes=audio_data,
         stt_model="whisper-large-v3"
     )
+    print(f"🎤 Transcription result: {transcription[:100]}...")
     
     # Combine system prompt with transcription for better context
     encoded_image = base64.b64encode(image_data).decode('utf-8')
     full_query = f"{system_prompt}\n\nPatient's description: {transcription}"
+    print(f"🧠 Starting image analysis with query length: {len(full_query)}")
     
     doctor_response = analyze_image_with_query(
         query=full_query,
         encoded_image=encoded_image,
         model="meta-llama/llama-4-scout-17b-16e-instruct"
     )
+    print(f"🧠 Image analysis result: {doctor_response[:100]}...")
 
     # Generate audio directly
+    print(f"🔊 Starting TTS generation...")
     output_audio = text_to_speech_with_elevenlabs(doctor_response)
     audio_output_id = None
     if output_audio is not None:
         audio_output_id = fs.put(output_audio, filename="doctor_response.mp3")
+        print(f"🔊 TTS audio saved with ID: {audio_output_id}")
+    else:
+        print(f"🔊 No TTS audio generated")
 
     diagnosis = {
         "userEmail": current_user["email"],
@@ -289,6 +309,7 @@ def process_audio_image(audio_data, image_data, current_user):
         "createdAt": datetime.datetime.utcnow()
     }
     diagnoses_collection.insert_one(diagnosis)
+    print(f"💾 Diagnosis saved to database")
 
     # Get the base URL from environment or use default
     base_url = os.environ.get("BASE_URL", "https://aihealthcheck-zzqr.onrender.com")
@@ -303,6 +324,9 @@ def process_audio_image(audio_data, image_data, current_user):
     # Only include audio_url if audio was generated
     if audio_output_id:
         response_data["audio_url"] = f"{base_url}/medibot/audio/{audio_output_id}"
+    
+    print(f"✅ Process completed successfully")
+    return response_data
     
     return response_data
 

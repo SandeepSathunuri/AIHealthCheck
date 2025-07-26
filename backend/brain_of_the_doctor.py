@@ -35,6 +35,10 @@ def analyze_image_with_query(query, encoded_image, model="meta-llama/llama-4-sco
     Analyze image with query using Groq's multimodal LLM.
     Falls back to mock analysis if Groq API fails.
     """
+    print(f"🧠 analyze_image_with_query called with query length: {len(query)}")
+    print(f"🧠 Using model: {model}")
+    print(f"🧠 GROQ_API_KEY available: {'Yes' if GROQ_API_KEY else 'No'}")
+    
     try:
         # Try to use Groq API with requests (avoiding client initialization issues)
         import requests
@@ -62,11 +66,15 @@ def analyze_image_with_query(query, encoded_image, model="meta-llama/llama-4-sco
             "temperature": 0.7
         }
         
+        print(f"🧠 Making request to Groq API...")
         response = requests.post(url, headers=headers, json=payload, timeout=30)
+        print(f"🧠 Groq API response status: {response.status_code}")
         
         if response.status_code == 200:
             result = response.json()
-            return result["choices"][0]["message"]["content"]
+            ai_response = result["choices"][0]["message"]["content"]
+            print(f"✅ Groq API success! Response length: {len(ai_response)}")
+            return ai_response
         else:
             print(f"❌ Groq API error: {response.status_code} - {response.text}")
             # Fall back to mock analysis
@@ -74,6 +82,8 @@ def analyze_image_with_query(query, encoded_image, model="meta-llama/llama-4-sco
             
     except Exception as e:
         print(f"❌ Error in analyze_image_with_query: {e}")
+        import traceback
+        traceback.print_exc()
         # Fall back to mock analysis
         return generate_mock_medical_analysis(query)
 

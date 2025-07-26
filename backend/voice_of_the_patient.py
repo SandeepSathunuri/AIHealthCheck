@@ -63,7 +63,10 @@ def transcribe_with_groq(GROQ_API_KEY, audio_bytes, stt_model="whisper-large-v3"
     Returns:
         str: Transcribed text.
     """
-    # Temporary fallback while we fix the Groq compatibility issue
+    print(f"🎤 transcribe_with_groq called with audio size: {len(audio_bytes)} bytes")
+    print(f"🎤 Using model: {stt_model}")
+    print(f"🎤 GROQ_API_KEY available: {'Yes' if GROQ_API_KEY else 'No'}")
+    
     try:
         # Try to use Groq API
         import requests
@@ -74,6 +77,8 @@ def transcribe_with_groq(GROQ_API_KEY, audio_bytes, stt_model="whisper-large-v3"
         with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
             temp_file.write(audio_bytes)
             temp_file_path = temp_file.name
+        
+        print(f"🎤 Saved audio to temp file: {temp_file_path}")
         
         try:
             # Use requests to call Groq API directly
@@ -89,22 +94,29 @@ def transcribe_with_groq(GROQ_API_KEY, audio_bytes, stt_model="whisper-large-v3"
                     'language': (None, 'en')
                 }
                 
+                print(f"🎤 Making request to Groq transcription API...")
                 response = requests.post(url, headers=headers, files=files, timeout=30)
+                print(f"🎤 Groq transcription response status: {response.status_code}")
                 
                 if response.status_code == 200:
                     result = response.json()
-                    return result.get('text', 'No transcription available')
+                    transcription = result.get('text', 'No transcription available')
+                    print(f"✅ Transcription success! Length: {len(transcription)}")
+                    return transcription
                 else:
-                    logging.error(f"Groq API error: {response.status_code} - {response.text}")
+                    print(f"❌ Groq transcription error: {response.status_code} - {response.text}")
                     return f"Audio transcription: I can hear you speaking about your medical concerns. Please describe your symptoms in detail."
         
         finally:
             # Clean up temporary file
             if os.path.exists(temp_file_path):
                 os.unlink(temp_file_path)
+                print(f"🎤 Cleaned up temp file")
                 
     except Exception as e:
-        logging.error(f"Transcription error: {e}")
+        print(f"❌ Transcription error: {e}")
+        import traceback
+        traceback.print_exc()
         # Return a helpful fallback message
         return "I can hear your audio input. Please describe your medical symptoms and concerns in detail so I can provide better analysis."
 
