@@ -56,20 +56,20 @@ except ImportError as e:
         return "Audio transcription: I can hear your medical concerns. Please describe your symptoms in detail for proper analysis."
 
 try:
-    print("🤗 Importing huggingface_tts (Hugging Face TTS solution)...")
-    from huggingface_tts import text_to_speech_with_elevenlabs
-    print("✅ Successfully imported Hugging Face TTS system")
+    print("🌐 Importing google_tts (Google TTS solution)...")
+    from google_tts import text_to_speech_with_elevenlabs
+    print("✅ Successfully imported Google TTS system")
 except ImportError as e:
-    print(f"❌ Failed to import huggingface_tts: {e}")
+    print(f"❌ Failed to import google_tts: {e}")
     def text_to_speech_with_elevenlabs(text):
         print("🔊 Using fallback TTS function")
         return None
 
 print("🔍 AI function imports completed")
 
-# Hugging Face TTS ready - no pre-loading needed
-print("🤗 Hugging Face TTS system ready - using Suno Bark model")
-print("🚀 Server will start immediately with HF TTS support")
+# Google TTS ready - no pre-loading needed
+print("🌐 Google TTS system ready - using free Google Translate API")
+print("🚀 Server will start immediately with Google TTS support")
 
 # MongoDB setup with retry logic
 def connect_to_mongodb(max_retries=3, retry_delay=2):
@@ -440,8 +440,8 @@ def process_audio_image(audio_data, image_data, current_user):
                 print(f"🔊 TTS timeout after 90s - using fallback audio generation")
                 # Try a quick fallback TTS method
                 try:
-                    from huggingface_tts import generate_mock_audio
-                    output_audio = generate_mock_audio(doctor_response[:100])
+                    from google_tts import generate_beep_audio
+                    output_audio = generate_beep_audio(doctor_response[:100])
                     if output_audio:
                         audio_output_id = fs.put(output_audio, filename="fallback_response.wav")
                         print(f"🔊 Fallback audio generated and saved: {audio_output_id}")

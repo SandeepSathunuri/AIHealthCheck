@@ -13,6 +13,6 @@ groq==0.8.0
 requests==2.31.0
 pydub==0.25.1
 SpeechRecognition==3.10.0
-huggingface_hub==0.20.3
-# Removed heavy TTS dependencies for cloud deployment
-# Using Hugging Face Inference API for TTS
+pyttsx3==2.90
+# Simple Google TTS + pyttsx3 fallback system
+# No heavy dependencies required
