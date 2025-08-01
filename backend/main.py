@@ -390,21 +390,37 @@ def process_audio_image(audio_data, image_data, current_user):
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(fast_image_analysis)
             try:
-                doctor_response = future.result(timeout=20)  # 20s timeout
+                ai_analysis = future.result(timeout=20)  # 20s timeout
+                
+                # Handle new response format with summary and detailed analysis
+                if isinstance(ai_analysis, dict):
+                    doctor_summary = ai_analysis.get("summary", "Analysis completed")
+                    doctor_detailed = ai_analysis.get("detailed_analysis", "Detailed analysis unavailable")
+                else:
+                    # Fallback for old format
+                    doctor_summary = str(ai_analysis)
+                    doctor_detailed = str(ai_analysis)
+                    
             except concurrent.futures.TimeoutError:
-                doctor_response = "Image analysis timeout - please try again with a clearer image"
+                doctor_summary = "Image analysis timeout - please try again with a clearer image"
+                doctor_detailed = "Image analysis timeout - please try again with a clearer image"
             except Exception as e:
-                doctor_response = f"Image analysis error - please try again: {str(e)[:100]}"
+                doctor_summary = f"Image analysis error - please try again: {str(e)[:100]}"
+                doctor_detailed = f"Image analysis error - please try again: {str(e)[:100]}"
         
-        print(f"🚀 FAST image analysis result: {doctor_response[:100]}...")
+        print(f"🚀 FAST image analysis result - Summary: {doctor_summary[:100]}...")
+        print(f"🚀 FAST image analysis result - Detailed: {doctor_detailed[:100]}...")
         
     except Exception as e:
         print(f"❌ Critical error in process_audio_image: {e}")
         # Return emergency fallback response
+        error_message = f"System error occurred. Please try again. Error: {str(e)[:100]}"
         return {
             "message": "Analysis completed with errors",
             "transcription": "Error in audio processing",
-            "doctor_response": f"System error occurred. Please try again. Error: {str(e)[:100]}",
+            "doctor_response": error_message,
+            "summary": error_message,
+            "detailed_analysis": error_message,
             "image_url": "error"
         }
 
@@ -424,7 +440,8 @@ def process_audio_image(audio_data, image_data, current_user):
         import concurrent.futures
         
         def quick_tts_generation():
-            return text_to_speech_with_elevenlabs(doctor_response)
+            # Use only the summary for TTS (shorter, more suitable for voice)
+            return text_to_speech_with_elevenlabs(doctor_summary)
         
         # Run TTS with timeout to ensure response isn't delayed too much
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -441,7 +458,7 @@ def process_audio_image(audio_data, image_data, current_user):
                 # Try a quick fallback TTS method
                 try:
                     from google_tts import generate_beep_audio
-                    output_audio = generate_beep_audio(doctor_response[:100])
+                    output_audio = generate_beep_audio(doctor_summary[:100])
                     if output_audio:
                         audio_output_id = fs.put(output_audio, filename="fallback_response.wav")
                         print(f"🔊 Fallback audio generated and saved: {audio_output_id}")
@@ -463,7 +480,9 @@ def process_audio_image(audio_data, image_data, current_user):
     response_data = {
         "message": "Analysis completed successfully",
         "transcription": transcription,
-        "doctor_response": doctor_response,
+        "doctor_response": doctor_summary,  # Summary for compatibility
+        "summary": doctor_summary,          # Short summary for TTS
+        "detailed_analysis": doctor_detailed, # Detailed analysis for display
         "image_url": f"{base_url}/medibot/image/{image_id}"
     }
     
@@ -479,7 +498,9 @@ def process_audio_image(audio_data, image_data, current_user):
                 "imageFileId": str(image_id),
                 "audioFileId": str(audio_id),
                 "transcription": transcription,
-                "doctorResponse": doctor_response,
+                "doctorResponse": doctor_summary,      # Summary for compatibility
+                "summary": doctor_summary,             # Short summary
+                "detailedAnalysis": doctor_detailed,   # Detailed analysis
                 "audioOutputId": str(audio_output_id) if audio_output_id else None,
                 "createdAt": datetime.datetime.utcnow()
             }
@@ -499,6 +520,12 @@ def process_audio_image(audio_data, image_data, current_user):
     # Final safety check to ensure response is valid
     if not response_data.get("doctor_response"):
         response_data["doctor_response"] = "Analysis completed. Please check the image and try again if needed."
+    
+    if not response_data.get("summary"):
+        response_data["summary"] = "Analysis completed. Please check the image and try again if needed."
+        
+    if not response_data.get("detailed_analysis"):
+        response_data["detailed_analysis"] = "Detailed analysis unavailable. Please try again."
     
     if not response_data.get("transcription"):
         response_data["transcription"] = "Audio processing completed."
