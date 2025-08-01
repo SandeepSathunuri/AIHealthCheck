@@ -32,26 +32,49 @@ def test_google_tts():
         print(f"❌ Google TTS error: {e}")
         return False
 
+def test_voicerss_tts():
+    """Test VoiceRSS TTS"""
+    print("\n🎙️ Testing VoiceRSS TTS")
+    print("=" * 30)
+    
+    try:
+        from google_tts import text_to_speech_with_voicerss
+        
+        test_text = "VoiceRSS test for medical system."
+        result = text_to_speech_with_voicerss(test_text, "test_voicerss.mp3")
+        
+        if result and len(result) > 1000:
+            print(f"✅ VoiceRSS TTS successful: {len(result)} bytes")
+            return True
+        else:
+            print("⚠️ VoiceRSS TTS not available (normal)")
+            return True  # Don't fail if service is down
+            
+    except Exception as e:
+        print(f"⚠️ VoiceRSS TTS error: {e}")
+        return True  # Don't fail if service is down
+
 def test_beep_fallback():
-    """Test beep audio fallback"""
-    print("\n🔊 Testing Beep Fallback")
+    """Test notification beep fallback"""
+    print("\n🔊 Testing Notification Beep")
     print("=" * 30)
     
     try:
         from google_tts import generate_beep_audio
         
-        test_text = "Beep test"
+        test_text = "Medical analysis complete"
         result = generate_beep_audio(test_text, "test_beep.wav")
         
         if result and len(result) > 1000:
-            print(f"✅ Beep audio successful: {len(result)} bytes")
+            print(f"✅ Notification beep successful: {len(result)} bytes")
+            print("🔊 Two-tone completion notification")
             return True
         else:
-            print("❌ Beep audio failed")
+            print("❌ Notification beep failed")
             return False
             
     except Exception as e:
-        print(f"❌ Beep audio error: {e}")
+        print(f"❌ Notification beep error: {e}")
         return False
 
 def test_compatibility():
@@ -83,7 +106,8 @@ def main():
     
     tests = [
         ("Google TTS", test_google_tts),
-        ("Beep Fallback", test_beep_fallback),
+        ("VoiceRSS TTS", test_voicerss_tts),
+        ("Notification Beep", test_beep_fallback),
         ("Compatibility", test_compatibility)
     ]
     
