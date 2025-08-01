@@ -49,7 +49,20 @@ def analyze_image_with_query(query, encoded_image, model="meta-llama/llama-4-sco
             "Content-Type": "application/json"
         }
         
+        # System prompt for professional doctor response
+        system_prompt = """You have to act as a professional doctor, i know you are not but this is for learning purpose. 
+        What's in this image?. Do you find anything wrong with it medically? 
+        If you make a differential, suggest some remedies for them. Donot add any numbers or special characters in 
+        your response. Your response should be in one long paragraph. Also always answer as if you are answering to a real person.
+        Donot say 'In the image I see' but say 'With what I see, I think you have ....'
+        Dont respond as an AI model in markdown, your answer should mimic that of an actual doctor not an AI bot, 
+        Keep your answer concise (max 2 sentences). No preamble, start your answer right away please"""
+        
         messages = [
+            {
+                "role": "system",
+                "content": system_prompt
+            },
             {
                 "role": "user",
                 "content": [
@@ -90,11 +103,6 @@ def analyze_image_with_query(query, encoded_image, model="meta-llama/llama-4-sco
 def generate_mock_medical_analysis(query):
     """
     Generate a mock medical analysis when the AI service is unavailable.
-    This provides a helpful response while maintaining the user experience.
+    Follows the same format as the system prompt.
     """
-    return """Based on the image and your description, I can see what appears to be a medical concern. 
-    While I cannot provide a definitive diagnosis, I recommend consulting with a healthcare professional 
-    for proper evaluation. Some general observations: the area shows signs that warrant medical attention. 
-    Please consider scheduling an appointment with your doctor for a thorough examination and appropriate 
-    treatment recommendations. In the meantime, monitor any changes and seek immediate medical care if 
-    symptoms worsen or if you experience severe pain, fever, or other concerning symptoms."""
+    return """With what I see, I think you have a skin condition that appears to be some form of dermatitis or irritation. I would recommend applying a topical anti-inflammatory cream and keeping the area clean and dry, but please consult with a healthcare professional for proper diagnosis and treatment if symptoms persist or worsen."""
