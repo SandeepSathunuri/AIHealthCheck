@@ -15,7 +15,17 @@ export default function useHomePageLogic() {
   const [imageUrl, setImageUrl] = useState(null);
   const [audioBlob, setAudioBlob] = useState(null);
   const [transcriptionDisplay, setTranscriptionDisplay] = useState(editRecord?.transcription || '');
-  const [doctorResponse, setDoctorResponse] = useState(editRecord?.doctorResponse || '');
+  const [doctorResponse, setDoctorResponse] = useState(
+    editRecord?.doctorResponse 
+      ? {
+          detailed_analysis: editRecord.doctorResponse,
+          recommendations: editRecord.recommendations || ''
+        }
+      : {
+          detailed_analysis: '',
+          recommendations: ''
+        }
+  );
   const [audioUrl, setAudioUrl] = useState(editRecord?.audioOutputPath ? getAudioUrl(editRecord.audioOutputPath) : '');
   const [isEditMode, setIsEditMode] = useState(!!editRecord);
   const [loading, setLoading] = useState(false);
@@ -136,12 +146,24 @@ export default function useHomePageLogic() {
   useEffect(() => {
     console.log('useEffect: Cleanup on unmount');
     return () => {
+      // Clean up image URL
       if (imageUrlRef.current) URL.revokeObjectURL(imageUrlRef.current);
+      
+      // Stop all camera tracks from videoRef
       if (videoRef.current?.srcObject) {
+        console.log('Cleanup: Stopping tracks from videoRef');
         videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
       }
+      
+      // Stop all camera tracks from stream state
+      if (stream) {
+        console.log('Cleanup: Stopping tracks from stream state');
+        stream.getTracks().forEach((track) => track.stop());
+      }
+      
+      console.log('Cleanup completed');
     };
-  }, []);
+  }, [stream]); // Add stream as dependency to ensure cleanup when stream changes
 
   const handleLogout = () => {
     console.log('handleLogout called');
@@ -186,12 +208,19 @@ export default function useHomePageLogic() {
 
   const openCamera = async () => {
     console.log('openCamera called');
+    
+    // Close any existing camera stream first
+    if (stream || videoRef.current?.srcObject) {
+      console.log('Closing existing camera stream before opening new one');
+      closeCamera();
+    }
+    
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      console.log('Stream acquired:', stream);
-      setStream(stream);
+      const newStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      console.log('New stream acquired:', newStream);
+      setStream(newStream);
       setUpdateTrigger((prev) => prev + 1);
-      console.log('Stream set in state:', stream, 'updateTrigger:', updateTrigger + 1);
+      console.log('Stream set in state:', newStream, 'updateTrigger:', updateTrigger + 1);
       setIsCameraOpen(true);
     } catch (err) {
       console.error('Camera error:', err);
@@ -202,13 +231,32 @@ export default function useHomePageLogic() {
 
   const closeCamera = () => {
     console.log('closeCamera called');
+    
+    // Stop tracks from videoRef if available
     if (videoRef.current?.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+      console.log('Stopping tracks from videoRef.current.srcObject');
+      videoRef.current.srcObject.getTracks().forEach((track) => {
+        console.log('Stopping track:', track.kind, track.readyState);
+        track.stop();
+      });
       videoRef.current.srcObject = null;
     }
+    
+    // Also stop tracks from stream state if available
+    if (stream) {
+      console.log('Stopping tracks from stream state');
+      stream.getTracks().forEach((track) => {
+        console.log('Stopping stream track:', track.kind, track.readyState);
+        track.stop();
+      });
+    }
+    
+    // Clear all camera-related state
     setIsCameraOpen(false);
     setStream(null);
     setUpdateTrigger((prev) => prev + 1);
+    
+    console.log('Camera closed and all tracks stopped');
   };
 
   const capturePhoto = () => {
@@ -246,7 +294,11 @@ export default function useHomePageLogic() {
     if (file) {
       setImage(file);
       handleSuccess('Image uploaded successfully');
-      closeCamera();
+      // Always close camera when a new image is uploaded
+      if (isCameraOpen || stream) {
+        console.log('Closing camera after image upload');
+        closeCamera();
+      }
     }
   };
 
@@ -278,7 +330,10 @@ export default function useHomePageLogic() {
     }
 
     setLoading(true);
-    setDoctorResponse('');
+    setDoctorResponse({
+      detailed_analysis: '',
+      recommendations: ''
+    });
     setAudioUrl('');
     setTranscriptionDisplay('Analyzing...'); // Update display during analysis
 
@@ -320,18 +375,27 @@ export default function useHomePageLogic() {
 
       const result = await response.json();
       console.log('Response received:', result);
-      console.log('Doctor response length:', result.doctor_response?.length);
-      console.log('Doctor response content:', result.doctor_response);
+      console.log('Detailed analysis length:', result.detailed_analysis?.length);
+      console.log('Recommendations length:', result.recommendations?.length);
+      console.log('Detailed analysis content:', result.detailed_analysis);
+      console.log('Recommendations content:', result.recommendations);
 
-      // Ensure we have the full response before setting state
-      const doctorResponseText = result.doctor_response || '';
+      // Extract both detailed analysis and recommendations from the new API structure
+      const detailedAnalysis = result.detailed_analysis || result.doctor_response || '';
+      const recommendations = result.recommendations || '';
       const audioUrlText = result.audio_url || '';
       const transcriptionText = result.transcription || 'Transcription available in audio';
 
-      console.log('Setting doctorResponse to:', doctorResponseText);
-      console.log('doctorResponseText length:', doctorResponseText.length);
+      console.log('Setting detailed analysis to:', detailedAnalysis);
+      console.log('Setting recommendations to:', recommendations);
+      console.log('Detailed analysis length:', detailedAnalysis.length);
+      console.log('Recommendations length:', recommendations.length);
 
-      setDoctorResponse(doctorResponseText);
+      // Store both responses in the state - we'll need to modify the state structure
+      setDoctorResponse({
+        detailed_analysis: detailedAnalysis,
+        recommendations: recommendations
+      });
       setAudioUrl(audioUrlText);
       setTranscriptionDisplay(transcriptionText);
       handleSuccess('Analysis complete');

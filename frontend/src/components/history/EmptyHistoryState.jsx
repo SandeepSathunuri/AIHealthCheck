@@ -1,8 +1,7 @@
 import React from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, Button } from "@mui/material";
 import { History as HistoryIcon } from "@mui/icons-material";
 import GlassCard from "../ui/GlassCard";
-import AnimatedButton from "../ui/AnimatedButton";
 
 const EmptyHistoryState = ({ isDarkMode }) => (
   <GlassCard
@@ -38,12 +37,24 @@ const EmptyHistoryState = ({ isDarkMode }) => (
       >
         Start by creating your first medical analysis to see your history here.
       </Typography>
-      <AnimatedButton
-        gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+      <Button
+        variant="contained"
         onClick={() => (window.location.href = "/home")}
+        sx={{
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          color: "white",
+          px: 4,
+          py: 1.5,
+          borderRadius: 2,
+          fontWeight: 600,
+          textTransform: "none",
+          "&:hover": {
+            background: "linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)",
+          },
+        }}
       >
         Create Analysis
-      </AnimatedButton>
+      </Button>
     </Box>
   </GlassCard>
 );

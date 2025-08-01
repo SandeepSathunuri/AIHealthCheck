@@ -27,10 +27,7 @@ import {
   RecordVoiceOver,
   Assessment,
   MedicalServices,
-  Lightbulb,
-  Warning,
   CheckCircle,
-  Info,
 } from "@mui/icons-material";
 import { motion, AnimatePresence } from "framer-motion";
 import GlassCard from "../ui/GlassCard";
@@ -45,6 +42,17 @@ const AIAnalysisResults = ({
   onShare,
   onRetry,
 }) => {
+  // Handle both old and new response formats
+  const detailedAnalysis = typeof aiResponse === 'object' 
+    ? aiResponse?.detailed_analysis || ''
+    : aiResponse || '';
+  const recommendations = typeof aiResponse === 'object' 
+    ? aiResponse?.recommendations || ''
+    : '';
+
+  console.log('AIAnalysisResults - detailedAnalysis:', detailedAnalysis);
+  console.log('AIAnalysisResults - recommendations:', recommendations);
+  console.log('AIAnalysisResults - aiResponse type:', typeof aiResponse);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentAudio, setCurrentAudio] = useState(null);
   const [expandedSection, setExpandedSection] = useState("analysis");
@@ -100,78 +108,9 @@ const AIAnalysisResults = ({
     }
   };
 
-  const parseAIResponse = (response) => {
-    // Parse AI response into structured sections
-    const sections = {
-      summary: "",
-      symptoms: [],
-      recommendations: [],
-    };
+  // No longer need to parse the response since we handle structured data directly
 
-    if (!response) return sections;
-
-    // Simple parsing logic - in real app, this would be more sophisticated
-    const lines = response.split("\n").filter((line) => line.trim());
-
-    lines.forEach((line) => {
-      if (
-        line.toLowerCase().includes("symptom") ||
-        line.toLowerCase().includes("pain")
-      ) {
-        sections.symptoms.push(line.trim());
-      } else if (
-        line.toLowerCase().includes("recommend") ||
-        line.toLowerCase().includes("suggest")
-      ) {
-        sections.recommendations.push(line.trim());
-      } else if (!sections.summary && line.length > 20) {
-        sections.summary = line.trim();
-      }
-    });
-
-    // Determine urgency based on keywords
-    if (
-      response.toLowerCase().includes("urgent") ||
-      response.toLowerCase().includes("emergency")
-    ) {
-      sections.urgency = "high";
-    } else if (
-      response.toLowerCase().includes("concern") ||
-      response.toLowerCase().includes("monitor")
-    ) {
-      sections.urgency = "medium";
-    }
-
-    return sections;
-  };
-
-  const analysisData = parseAIResponse(aiResponse);
-
-  const getUrgencyColor = (urgency) => {
-    switch (urgency) {
-      case "high":
-        return "#ff4444";
-      case "medium":
-        return "#ff9800";
-      case "low":
-        return "#4caf50";
-      default:
-        return "#4caf50";
-    }
-  };
-
-  const getUrgencyIcon = (urgency) => {
-    switch (urgency) {
-      case "high":
-        return <Warning />;
-      case "medium":
-        return <Info />;
-      case "low":
-        return <CheckCircle />;
-      default:
-        return <CheckCircle />;
-    }
-  };
+  // Removed unused urgency functions since we handle structured responses directly
 
   if (isLoading) {
     return (
@@ -405,7 +344,7 @@ const AIAnalysisResults = ({
             </AccordionDetails>
           </Accordion>
 
-          {/* AI Analysis Section */}
+          {/* Detailed Analysis Section */}
           <Accordion
             expanded={expandedSection === "analysis"}
             onChange={() =>
@@ -433,7 +372,7 @@ const AIAnalysisResults = ({
                     variant="h6"
                     sx={{ color: isDarkMode ? "white" : "black" }}
                   >
-                    AI Medical Analysis
+                    Detailed Analysis
                   </Typography>
                   <Typography
                     variant="body2"
@@ -443,186 +382,196 @@ const AIAnalysisResults = ({
                         : "rgba(0,0,0,0.7)",
                     }}
                   >
-                    Professional medical insights and recommendations
+                    AI medical diagnosis (spoken by AI voice)
                   </Typography>
                 </Box>
               </Box>
             </AccordionSummary>
             <AccordionDetails>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {/* Summary */}
-                {analysisData.summary && (
-                  <Card
+              <Card
+                sx={{
+                  background: isDarkMode
+                    ? "rgba(0,0,0,0.2)"
+                    : "rgba(255,255,255,0.8)",
+                  border: `1px solid ${
+                    isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"
+                  }`,
+                }}
+              >
+                <CardContent>
+                  <Typography
+                    variant="body1"
                     sx={{
-                      background:
-                        "linear-gradient(135deg, rgba(0,212,255,0.1) 0%, rgba(102,126,234,0.1) 100%)",
-                      border: `1px solid ${
-                        isDarkMode
-                          ? "rgba(0,212,255,0.3)"
-                          : "rgba(0,212,255,0.2)"
-                      }`,
+                      color: isDarkMode ? "white" : "black",
+                      lineHeight: 1.6,
+                      whiteSpace: "pre-line",
+                      fontStyle: detailedAnalysis ? "normal" : "italic",
                     }}
                   >
-                    <CardContent>
-                      <Typography
-                        variant="subtitle2"
-                        sx={{
-                          color: "#00d4ff",
-                          mb: 1,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 1,
-                        }}
-                      >
-                        <Assessment fontSize="small" />
-                        Summary
-                      </Typography>
-                      <Typography
-                        variant="body1"
-                        sx={{ color: isDarkMode ? "white" : "black" }}
-                      >
-                        {analysisData.summary}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Full AI Response */}
-                <Card
-                  sx={{
-                    background: isDarkMode
-                      ? "rgba(0,0,0,0.2)"
-                      : "rgba(255,255,255,0.8)",
-                    border: `1px solid ${
-                      isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"
-                    }`,
-                  }}
-                >
-                  <CardContent>
-                    <Typography
-                      variant="subtitle2"
-                      sx={{
-                        color: isDarkMode
-                          ? "rgba(255,255,255,0.8)"
-                          : "rgba(0,0,0,0.8)",
-                        mb: 2,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <Lightbulb fontSize="small" />
-                      Detailed Analysis
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        color: isDarkMode ? "white" : "black",
-                        lineHeight: 1.6,
-                        whiteSpace: "pre-line",
-                        fontStyle: aiResponse ? "normal" : "italic",
-                      }}
-                    >
-                      {aiResponse || (
-                        <Box sx={{ textAlign: "center", py: 4 }}>
-                          <Box
-                            sx={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              width: 64,
-                              height: 64,
-                              borderRadius: "50%",
-                              background: isDarkMode 
-                                ? "rgba(255,255,255,0.05)" 
-                                : "rgba(0,0,0,0.05)",
-                              mb: 2,
-                            }}
-                          >
-                            <Assessment sx={{ 
-                              fontSize: 32, 
-                              color: isDarkMode 
-                                ? "rgba(255,255,255,0.3)" 
-                                : "rgba(0,0,0,0.3)" 
-                            }} />
-                          </Box>
-                          <Typography
-                            variant="h6"
-                            sx={{
-                              color: isDarkMode ? "rgba(255,255,255,0.7)" : "#64748b",
-                              mb: 1,
-                              fontWeight: 600,
-                            }}
-                          >
-                            Ready for Analysis
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: isDarkMode ? "rgba(255,255,255,0.5)" : "#94a3b8",
-                              maxWidth: 300,
-                              mx: "auto",
-                            }}
-                          >
-                            Upload a medical image and record your voice to get started with AI-powered medical analysis.
-                          </Typography>
-                        </Box>
-                      )}
-                    </Typography>
-                  </CardContent>
-                </Card>
-
-                {/* Recommendations */}
-                {analysisData.recommendations.length > 0 && (
-                  <Card
-                    sx={{
-                      background:
-                        "linear-gradient(135deg, rgba(67,233,123,0.1) 0%, rgba(56,249,215,0.1) 100%)",
-                      border: `1px solid ${
-                        isDarkMode
-                          ? "rgba(67,233,123,0.3)"
-                          : "rgba(67,233,123,0.2)"
-                      }`,
-                    }}
-                  >
-                    <CardContent>
-                      <Typography
-                        variant="subtitle2"
-                        sx={{
-                          color: "#43e97b",
-                          mb: 2,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 1,
-                        }}
-                      >
-                        <CheckCircle fontSize="small" />
-                        Recommendations
-                      </Typography>
-                      {analysisData.recommendations.map((rec, index) => (
-                        <Typography
-                          key={index}
-                          variant="body2"
+                    {detailedAnalysis || (
+                      <Box sx={{ textAlign: "center", py: 4 }}>
+                        <Box
                           sx={{
-                            color: isDarkMode ? "white" : "black",
-                            mb: 1,
-                            pl: 2,
-                            position: "relative",
-                            "&:before": {
-                              content: '"•"',
-                              position: "absolute",
-                              left: 0,
-                              color: "#43e97b",
-                            },
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: 64,
+                            height: 64,
+                            borderRadius: "50%",
+                            background: isDarkMode 
+                              ? "rgba(255,255,255,0.05)" 
+                              : "rgba(0,0,0,0.05)",
+                            mb: 2,
                           }}
                         >
-                          {rec}
+                          <Assessment sx={{ 
+                            fontSize: 32, 
+                            color: isDarkMode 
+                              ? "rgba(255,255,255,0.3)" 
+                              : "rgba(0,0,0,0.3)" 
+                          }} />
+                        </Box>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            color: isDarkMode ? "rgba(255,255,255,0.7)" : "#64748b",
+                            mb: 1,
+                            fontWeight: 600,
+                          }}
+                        >
+                          Ready for Analysis
                         </Typography>
-                      ))}
-                    </CardContent>
-                  </Card>
-                )}
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: isDarkMode ? "rgba(255,255,255,0.5)" : "#94a3b8",
+                            maxWidth: 300,
+                            mx: "auto",
+                          }}
+                        >
+                          Upload a medical image and record your voice to get started with AI-powered medical analysis.
+                        </Typography>
+                      </Box>
+                    )}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </AccordionDetails>
+          </Accordion>
+
+          {/* Recommendations Section */}
+          <Accordion
+            expanded={expandedSection === "recommendations"}
+            onChange={() =>
+              setExpandedSection(
+                expandedSection === "recommendations" ? "" : "recommendations"
+              )
+            }
+            sx={{
+              mb: 2,
+              background: isDarkMode
+                ? "rgba(255,255,255,0.05)"
+                : "rgba(0,0,0,0.05)",
+              "&:before": { display: "none" },
+            }}
+          >
+            <AccordionSummary
+              expandIcon={
+                <ExpandMore sx={{ color: isDarkMode ? "white" : "black" }} />
+              }
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <CheckCircle sx={{ color: "#43e97b" }} />
+                <Box>
+                  <Typography
+                    variant="h6"
+                    sx={{ color: isDarkMode ? "white" : "black" }}
+                  >
+                    Recommendations
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: isDarkMode
+                        ? "rgba(255,255,255,0.7)"
+                        : "rgba(0,0,0,0.7)",
+                    }}
+                  >
+                    Comprehensive treatment and care recommendations
+                  </Typography>
+                </Box>
               </Box>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Card
+                sx={{
+                  background:
+                    "linear-gradient(135deg, rgba(67,233,123,0.1) 0%, rgba(56,249,215,0.1) 100%)",
+                  border: `1px solid ${
+                    isDarkMode
+                      ? "rgba(67,233,123,0.3)"
+                      : "rgba(67,233,123,0.2)"
+                  }`,
+                }}
+              >
+                <CardContent>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      color: isDarkMode ? "white" : "black",
+                      lineHeight: 1.6,
+                      whiteSpace: "pre-line",
+                      fontStyle: recommendations ? "normal" : "italic",
+                    }}
+                  >
+                    {recommendations || (
+                      <Box sx={{ textAlign: "center", py: 4 }}>
+                        <Box
+                          sx={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: 64,
+                            height: 64,
+                            borderRadius: "50%",
+                            background: isDarkMode 
+                              ? "rgba(255,255,255,0.05)" 
+                              : "rgba(0,0,0,0.05)",
+                            mb: 2,
+                          }}
+                        >
+                          <CheckCircle sx={{ 
+                            fontSize: 32, 
+                            color: isDarkMode 
+                              ? "rgba(255,255,255,0.3)" 
+                              : "rgba(0,0,0,0.3)" 
+                          }} />
+                        </Box>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            color: isDarkMode ? "rgba(255,255,255,0.7)" : "#64748b",
+                            mb: 1,
+                            fontWeight: 600,
+                          }}
+                        >
+                          Recommendations Available After Analysis
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: isDarkMode ? "rgba(255,255,255,0.5)" : "#94a3b8",
+                            maxWidth: 300,
+                            mx: "auto",
+                          }}
+                        >
+                          Detailed treatment recommendations and care instructions will appear here after analysis.
+                        </Typography>
+                      </Box>
+                    )}
+                  </Typography>
+                </CardContent>
+              </Card>
             </AccordionDetails>
           </Accordion>
 

@@ -28,7 +28,6 @@ import {
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
-import { useFileUpload, useNotifications } from '../../hooks/useEnterpriseFeatures';
 
 const ImagePreview = ({ file, onRemove, onEnhance }) => {
   const [imageUrl, setImageUrl] = useState(null);
@@ -292,9 +291,39 @@ const SmartImageUploader = ({ onImageSelect, disabled = false, initialFile = nul
   const [selectedFile, setSelectedFile] = useState(initialFile);
   const [showCamera, setShowCamera] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState(null);
   
-  const { uploadProgress, isUploading, error, validateFile } = useFileUpload();
-  const { notifyError, notifySuccess, notifyWarning } = useNotifications();
+  // Simple file validation function
+  const validateFile = (file, options = {}) => {
+    const { maxSize = 50 * 1024 * 1024, allowedTypes = ['image/jpeg', 'image/png', 'image/webp'] } = options;
+    
+    if (file.size > maxSize) {
+      throw new Error(`File size must be less than ${Math.round(maxSize / (1024 * 1024))}MB`);
+    }
+    
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error('File type not supported. Please use JPEG, PNG, or WebP format.');
+    }
+    
+    return true;
+  };
+  
+  // Simple notification functions
+  const notifyError = (message) => {
+    setError(message);
+    setTimeout(() => setError(null), 5000);
+  };
+  
+  const notifySuccess = (message) => {
+    console.log('Success:', message);
+    setError(null);
+  };
+  
+  const notifyWarning = (message) => {
+    console.log('Warning:', message);
+  };
   
   // Handle initialFile changes (for edit mode)
   React.useEffect(() => {
@@ -330,7 +359,7 @@ const SmartImageUploader = ({ onImageSelect, disabled = false, initialFile = nul
     } finally {
       setIsAnalyzing(false);
     }
-  }, [validateFile, onImageSelect, notifyError, notifySuccess, notifyWarning]);
+  }, [onImageSelect]);
   
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

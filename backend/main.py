@@ -537,6 +537,9 @@ def process_audio_image(audio_data, image_data, current_user):
         response_data["transcription"] = "Audio processing completed."
     
     print(f"🚀 Final response data: {len(response_data)} fields")
+    print(f"🔍 Response fields: {list(response_data.keys())}")
+    print(f"🔍 detailed_analysis length: {len(response_data.get('detailed_analysis', ''))}")
+    print(f"🔍 recommendations length: {len(response_data.get('recommendations', ''))}")
     return response_data
     
     return response_data
@@ -692,6 +695,20 @@ def get_audio(audio_id: str):
         raise HTTPException(status_code=404, detail="Audio not found")
 
 # ---------------------- Basic Health Check ----------------------
+@app.get("/test-response")
+async def test_response():
+    """Test endpoint to verify response structure"""
+    from brain_of_the_doctor import generate_mock_medical_analysis
+    result = generate_mock_medical_analysis("test")
+    
+    return {
+        "detailed_analysis": result["detailed_analysis"],
+        "recommendations": result["recommendations"],
+        "detailed_analysis_length": len(result["detailed_analysis"]),
+        "recommendations_length": len(result["recommendations"]),
+        "are_different": result["detailed_analysis"] != result["recommendations"]
+    }
+
 @app.get("/health")
 async def health_check():
     """Simple health check endpoint"""

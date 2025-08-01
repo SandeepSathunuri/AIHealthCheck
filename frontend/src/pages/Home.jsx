@@ -55,14 +55,24 @@ const ResultsPanel = ({
 }) => {
   const handleDownload = () => {
     // Create a simple text report
+    const detailedAnalysis = typeof doctorResponse === 'object' 
+      ? doctorResponse?.detailed_analysis || ''
+      : doctorResponse || '';
+    const recommendations = typeof doctorResponse === 'object' 
+      ? doctorResponse?.recommendations || ''
+      : '';
+
     const report = `Medical Analysis Report
 Generated: ${new Date().toLocaleString()}
 
 Voice Input:
 ${transcription || "No voice input recorded"}
 
-AI Analysis:
-${doctorResponse || "No analysis available"}
+Detailed Analysis:
+${detailedAnalysis || "No analysis available"}
+
+Recommendations:
+${recommendations || "No recommendations available"}
 `;
 
     const blob = new Blob([report], { type: "text/plain" });
@@ -77,15 +87,19 @@ ${doctorResponse || "No analysis available"}
   };
 
   const handleShare = () => {
+    const detailedAnalysis = typeof doctorResponse === 'object' 
+      ? doctorResponse?.detailed_analysis || ''
+      : doctorResponse || '';
+
     if (navigator.share) {
       navigator.share({
         title: "Medical Analysis Results",
-        text: `AI Medical Analysis: ${doctorResponse?.substring(0, 100)}...`,
+        text: `AI Medical Analysis: ${detailedAnalysis?.substring(0, 100)}...`,
         url: window.location.href,
       });
     } else {
       // Fallback: copy to clipboard
-      navigator.clipboard.writeText(`Medical Analysis: ${doctorResponse}`);
+      navigator.clipboard.writeText(`Medical Analysis: ${detailedAnalysis}`);
       alert("Analysis copied to clipboard!");
     }
   };
@@ -494,9 +508,9 @@ const Home = () => {
                   variant="glass"
                   padding={0}
                   sx={{ height: "100%" }}
-                  glow={doctorResponse ? true : false}
+                  glow={doctorResponse && (typeof doctorResponse === 'object' ? doctorResponse.detailed_analysis : doctorResponse) ? true : false}
                   gradient={
-                    doctorResponse ? premiumGradients.success : undefined
+                    doctorResponse && (typeof doctorResponse === 'object' ? doctorResponse.detailed_analysis : doctorResponse) ? premiumGradients.success : undefined
                   }
                 >
                   <Box
@@ -555,7 +569,7 @@ const Home = () => {
                           </Typography>
                         </Box>
                       </Box>
-                      {doctorResponse && (
+                      {doctorResponse && (typeof doctorResponse === 'object' ? doctorResponse.detailed_analysis : doctorResponse) && (
                         <Chip
                           label="Done"
                           size="small"
@@ -579,7 +593,7 @@ const Home = () => {
                     }}
                   >
                     <ResultsPanel
-                      key={`${doctorResponse?.length || 0}-${
+                      key={`${typeof doctorResponse === 'object' ? (doctorResponse?.detailed_analysis?.length || 0) + (doctorResponse?.recommendations?.length || 0) : (doctorResponse?.length || 0)}-${
                         transcriptionDisplay?.length || 0
                       }`}
                       transcription={transcriptionDisplay}
