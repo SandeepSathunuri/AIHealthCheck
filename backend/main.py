@@ -392,24 +392,30 @@ def process_audio_image(audio_data, image_data, current_user):
             try:
                 ai_analysis = future.result(timeout=20)  # 20s timeout
                 
-                # Handle new response format with summary and detailed analysis
+                # Handle new response format with detailed analysis and recommendations
                 if isinstance(ai_analysis, dict):
-                    doctor_summary = ai_analysis.get("summary", "Analysis completed")
-                    doctor_detailed = ai_analysis.get("detailed_analysis", "Detailed analysis unavailable")
+                    doctor_detailed_analysis = ai_analysis.get("detailed_analysis", "Analysis completed")  # For VOICE
+                    doctor_recommendations = ai_analysis.get("recommendations", "Recommendations unavailable")  # For TEXT
                 else:
                     # Fallback for old format
-                    doctor_summary = str(ai_analysis)
-                    doctor_detailed = str(ai_analysis)
+                    doctor_detailed_analysis = str(ai_analysis)
+                    doctor_recommendations = str(ai_analysis)
                     
             except concurrent.futures.TimeoutError:
-                doctor_summary = "Image analysis timeout - please try again with a clearer image"
-                doctor_detailed = "Image analysis timeout - please try again with a clearer image"
+                doctor_detailed_analysis = "Image analysis timeout - please try again with a clearer image"
+                doctor_recommendations = "Image analysis timeout - please try again with a clearer image"
             except Exception as e:
-                doctor_summary = f"Image analysis error - please try again: {str(e)[:100]}"
-                doctor_detailed = f"Image analysis error - please try again: {str(e)[:100]}"
+                doctor_detailed_analysis = f"Image analysis error - please try again: {str(e)[:100]}"
+                doctor_recommendations = f"Image analysis error - please try again: {str(e)[:100]}"
         
-        print(f"🚀 FAST image analysis result - Summary: {doctor_summary[:100]}...")
-        print(f"🚀 FAST image analysis result - Detailed: {doctor_detailed[:100]}...")
+        print(f"🚀 FAST image analysis result - Detailed Analysis (Voice): {doctor_detailed_analysis[:100]}...")
+        print(f"🚀 FAST image analysis result - Recommendations (Text): {doctor_recommendations[:100]}...")
+        
+        # Check if responses are different
+        if doctor_detailed_analysis == doctor_recommendations:
+            print("⚠️ WARNING: Both responses are identical - this should not happen!")
+        else:
+            print("✅ Responses are different - system working correctly")
         
     except Exception as e:
         print(f"❌ Critical error in process_audio_image: {e}")
@@ -419,8 +425,8 @@ def process_audio_image(audio_data, image_data, current_user):
             "message": "Analysis completed with errors",
             "transcription": "Error in audio processing",
             "doctor_response": error_message,
-            "summary": error_message,
             "detailed_analysis": error_message,
+            "recommendations": error_message,
             "image_url": "error"
         }
 
@@ -440,8 +446,8 @@ def process_audio_image(audio_data, image_data, current_user):
         import concurrent.futures
         
         def quick_tts_generation():
-            # Use only the summary for TTS (shorter, more suitable for voice)
-            return text_to_speech_with_elevenlabs(doctor_summary)
+            # Use the detailed analysis for TTS (this is the doctor's voice response)
+            return text_to_speech_with_elevenlabs(doctor_detailed_analysis)
         
         # Run TTS with timeout to ensure response isn't delayed too much
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -458,7 +464,7 @@ def process_audio_image(audio_data, image_data, current_user):
                 # Try a quick fallback TTS method
                 try:
                     from google_tts import generate_beep_audio
-                    output_audio = generate_beep_audio(doctor_summary[:100])
+                    output_audio = generate_beep_audio(doctor_detailed_analysis[:100])
                     if output_audio:
                         audio_output_id = fs.put(output_audio, filename="fallback_response.wav")
                         print(f"🔊 Fallback audio generated and saved: {audio_output_id}")
@@ -480,9 +486,9 @@ def process_audio_image(audio_data, image_data, current_user):
     response_data = {
         "message": "Analysis completed successfully",
         "transcription": transcription,
-        "doctor_response": doctor_summary,  # Summary for compatibility
-        "summary": doctor_summary,          # Short summary for TTS
-        "detailed_analysis": doctor_detailed, # Detailed analysis for display
+        "doctor_response": doctor_detailed_analysis,  # Detailed analysis for compatibility
+        "detailed_analysis": doctor_detailed_analysis, # Detailed analysis (AI speaks this)
+        "recommendations": doctor_recommendations,     # Recommendations (text only, no voice)
         "image_url": f"{base_url}/medibot/image/{image_id}"
     }
     
@@ -498,9 +504,9 @@ def process_audio_image(audio_data, image_data, current_user):
                 "imageFileId": str(image_id),
                 "audioFileId": str(audio_id),
                 "transcription": transcription,
-                "doctorResponse": doctor_summary,      # Summary for compatibility
-                "summary": doctor_summary,             # Short summary
-                "detailedAnalysis": doctor_detailed,   # Detailed analysis
+                "doctorResponse": doctor_detailed_analysis,    # Detailed analysis for compatibility
+                "detailedAnalysis": doctor_detailed_analysis, # Detailed analysis (AI speaks this)
+                "recommendations": doctor_recommendations,    # Recommendations (text only)
                 "audioOutputId": str(audio_output_id) if audio_output_id else None,
                 "createdAt": datetime.datetime.utcnow()
             }
@@ -521,11 +527,11 @@ def process_audio_image(audio_data, image_data, current_user):
     if not response_data.get("doctor_response"):
         response_data["doctor_response"] = "Analysis completed. Please check the image and try again if needed."
     
-    if not response_data.get("summary"):
-        response_data["summary"] = "Analysis completed. Please check the image and try again if needed."
-        
     if not response_data.get("detailed_analysis"):
-        response_data["detailed_analysis"] = "Detailed analysis unavailable. Please try again."
+        response_data["detailed_analysis"] = "Analysis completed. Please check the image and try again if needed."
+        
+    if not response_data.get("recommendations"):
+        response_data["recommendations"] = "Recommendations unavailable. Please try again."
     
     if not response_data.get("transcription"):
         response_data["transcription"] = "Audio processing completed."
