@@ -1,0 +1,7 @@
+espeak
+espeak-data
+festival
+festvox-kallpc16k
+alsa-utils
+libsndfile1-dev
+ffmpeg
