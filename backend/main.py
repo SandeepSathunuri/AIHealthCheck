@@ -233,6 +233,12 @@ class DiagnosisUpdate(BaseModel):
     transcription: Optional[str]
     doctorResponse: Optional[str]
 
+# ---------------------- Health Check Route ----------------------
+@app.get("/health")
+async def health_check():
+    """Lightweight health check endpoint for Render wake-up"""
+    return {"status": "healthy", "timestamp": datetime.datetime.utcnow().isoformat()}
+
 # ---------------------- Auth Routes ----------------------
 @app.post("/auth/signup")
 async def signup(user: UserCreate):

@@ -29,6 +29,27 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
 
+// Utility function to completely stop camera streams
+const stopCameraStream = (stream, videoElement = null) => {
+  if (stream) {
+    console.log('🔴 Stopping camera stream with', stream.getTracks().length, 'tracks');
+    stream.getTracks().forEach(track => {
+      console.log('🔴 Stopping track:', track.kind, 'state:', track.readyState);
+      track.stop();
+    });
+  }
+  
+  if (videoElement) {
+    console.log('🔴 Clearing video element srcObject');
+    videoElement.srcObject = null;
+  }
+  
+  // Force garbage collection hint
+  if (window.gc) {
+    window.gc();
+  }
+};
+
 const ImagePreview = ({ file, onRemove, onEnhance }) => {
   const [imageUrl, setImageUrl] = useState(null);
   const [imageInfo, setImageInfo] = useState(null);
@@ -193,7 +214,19 @@ const CameraCapture = ({ onCapture, onClose }) => {
   const [stream, setStream] = useState(null);
   const [isReady, setIsReady] = useState(false);
   
+  // Enhanced close handler that ensures camera cleanup
+  const handleClose = () => {
+    console.log('🔴 CameraCapture handleClose: Stopping camera before close');
+    
+    // Use utility function for complete cleanup
+    stopCameraStream(stream, videoRef.current);
+    
+    onClose();
+  };
+  
   React.useEffect(() => {
+    let currentStream = null;
+    
     const startCamera = async () => {
       try {
         const mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -204,7 +237,9 @@ const CameraCapture = ({ onCapture, onClose }) => {
           },
         });
         
+        currentStream = mediaStream;
         setStream(mediaStream);
+        
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
           videoRef.current.onloadedmetadata = () => {
@@ -218,12 +253,17 @@ const CameraCapture = ({ onCapture, onClose }) => {
     
     startCamera();
     
+    // Cleanup function - this is crucial for stopping the camera
     return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
+      console.log('🔴 CameraCapture cleanup: Stopping camera stream');
+      
+      // Use utility function for complete cleanup
+      stopCameraStream(currentStream, videoRef.current);
+      stopCameraStream(stream); // Backup cleanup
+      
+      console.log('🔴 Camera cleanup completed');
     };
-  }, []);
+  }, []); // Empty dependency array is correct here
   
   const handleCapture = () => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -239,13 +279,18 @@ const CameraCapture = ({ onCapture, onClose }) => {
     
     canvas.toBlob((blob) => {
       const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
+      
+      // Stop camera immediately after capture
+      console.log('🔴 Stopping camera after capture');
+      stopCameraStream(stream, video);
+      
       onCapture(file);
       onClose();
     }, 'image/jpeg', 0.9);
   };
   
   return (
-    <Dialog open onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle>Capture Image</DialogTitle>
       <DialogContent>
         <Box sx={{ position: 'relative', textAlign: 'center' }}>
@@ -273,7 +318,7 @@ const CameraCapture = ({ onCapture, onClose }) => {
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={handleClose}>Cancel</Button>
         <Button
           onClick={handleCapture}
           variant="contained"

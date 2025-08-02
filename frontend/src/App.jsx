@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { CssBaseline } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,8 +10,15 @@ import History from './pages/History';
 import Profile from './pages/Profile';
 import { SidebarProvider } from './context/SidebarContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { wakeUpBackend } from './utils/backendWakeup';
+import BackendStatus from './components/BackendStatus';
 
 function App() {
+  // Wake up backend immediately when app loads
+  useEffect(() => {
+    wakeUpBackend();
+  }, []);
+
   return (
     <AuthProvider>
       <AppContent />
@@ -66,6 +73,7 @@ function AppContent() {
   return (
     <>
       <CssBaseline />
+      <BackendStatus showOnlyWhenLoading={true} />
       <div className="App" style={{ minHeight: '100vh', overflow: 'auto' }}>
         <SidebarProvider>
           <AnimatePresence mode="wait">

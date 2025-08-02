@@ -144,24 +144,38 @@ export default function useHomePageLogic() {
   }, [editRecord]);
 
   useEffect(() => {
-    console.log('useEffect: Cleanup on unmount');
+    console.log('🔴 useEffect: Setting up cleanup on unmount');
     return () => {
+      console.log('🔴 Component unmounting - starting cleanup');
+      
       // Clean up image URL
-      if (imageUrlRef.current) URL.revokeObjectURL(imageUrlRef.current);
+      if (imageUrlRef.current) {
+        URL.revokeObjectURL(imageUrlRef.current);
+        console.log('🔴 Image URL revoked');
+      }
       
       // Stop all camera tracks from videoRef
       if (videoRef.current?.srcObject) {
-        console.log('Cleanup: Stopping tracks from videoRef');
-        videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+        console.log('🔴 Cleanup: Stopping tracks from videoRef');
+        const tracks = videoRef.current.srcObject.getTracks();
+        tracks.forEach((track) => {
+          console.log('🔴 Cleanup track:', track.kind, track.readyState);
+          track.stop();
+        });
+        videoRef.current.srcObject = null;
       }
       
       // Stop all camera tracks from stream state
       if (stream) {
-        console.log('Cleanup: Stopping tracks from stream state');
-        stream.getTracks().forEach((track) => track.stop());
+        console.log('🔴 Cleanup: Stopping tracks from stream state');
+        const tracks = stream.getTracks();
+        tracks.forEach((track) => {
+          console.log('🔴 Cleanup stream track:', track.kind, track.readyState);
+          track.stop();
+        });
       }
       
-      console.log('Cleanup completed');
+      console.log('🔴 Complete cleanup finished');
     };
   }, [stream]); // Add stream as dependency to ensure cleanup when stream changes
 
@@ -230,23 +244,26 @@ export default function useHomePageLogic() {
   };
 
   const closeCamera = () => {
-    console.log('closeCamera called');
+    console.log('🔴 closeCamera called');
     
     // Stop tracks from videoRef if available
     if (videoRef.current?.srcObject) {
-      console.log('Stopping tracks from videoRef.current.srcObject');
-      videoRef.current.srcObject.getTracks().forEach((track) => {
-        console.log('Stopping track:', track.kind, track.readyState);
+      console.log('🔴 Stopping tracks from videoRef.current.srcObject');
+      const tracks = videoRef.current.srcObject.getTracks();
+      tracks.forEach((track) => {
+        console.log('🔴 Stopping track:', track.kind, track.readyState);
         track.stop();
       });
       videoRef.current.srcObject = null;
+      console.log('🔴 Video element srcObject cleared');
     }
     
     // Also stop tracks from stream state if available
     if (stream) {
-      console.log('Stopping tracks from stream state');
-      stream.getTracks().forEach((track) => {
-        console.log('Stopping stream track:', track.kind, track.readyState);
+      console.log('🔴 Stopping tracks from stream state');
+      const tracks = stream.getTracks();
+      tracks.forEach((track) => {
+        console.log('🔴 Stopping stream track:', track.kind, track.readyState);
         track.stop();
       });
     }
@@ -256,7 +273,12 @@ export default function useHomePageLogic() {
     setStream(null);
     setUpdateTrigger((prev) => prev + 1);
     
-    console.log('Camera closed and all tracks stopped');
+    // Force a small delay to ensure cleanup completes
+    setTimeout(() => {
+      console.log('🔴 Camera cleanup completed with delay');
+    }, 100);
+    
+    console.log('🔴 Camera closed and all tracks stopped');
   };
 
   const capturePhoto = () => {

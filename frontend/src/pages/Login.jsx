@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -28,6 +28,7 @@ import {
 } from "@mui/icons-material";
 import { motion, AnimatePresence } from "framer-motion";
 import { ThemeProvider } from "@mui/material/styles";
+import { preWarmBackend } from "../utils/backendWakeup";
 import { premiumTheme, premiumLightTheme } from "../styles/premiumTheme";
 import PremiumButton from "../components/ui/PremiumButton";
 import { useNavigate } from "react-router-dom";
@@ -40,10 +41,19 @@ const ProfessionalLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [hasPreWarmed, setHasPreWarmed] = useState(false);
 
   const navigate = useNavigate();
   const { login } = useAuth();
   const { isDarkMode } = useThemeMode();
+
+  // Pre-warm backend when user starts typing
+  const handlePreWarm = () => {
+    if (!hasPreWarmed) {
+      preWarmBackend();
+      setHasPreWarmed(true);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -334,6 +344,7 @@ const ProfessionalLogin = () => {
                           type="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
+                          onFocus={handlePreWarm}
                           required
                           InputProps={{
                             startAdornment: (
@@ -364,6 +375,7 @@ const ProfessionalLogin = () => {
                           type={showPassword ? "text" : "password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
+                          onFocus={handlePreWarm}
                           required
                           InputProps={{
                             startAdornment: (
