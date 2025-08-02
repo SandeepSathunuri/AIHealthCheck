@@ -35,7 +35,10 @@ import {
   Star,
 } from "@mui/icons-material";
 import { ThemeProvider } from "@mui/material/styles";
-import { professionalTheme, professionalDarkTheme } from "../styles/professionalTheme";
+import {
+  professionalTheme,
+  professionalDarkTheme,
+} from "../styles/professionalTheme";
 import ProfessionalCard from "../components/ui/ProfessionalCard";
 import ProfessionalButton from "../components/ui/ProfessionalButton";
 import ModernSidebar from "../components/ui/ModernSidebar";
@@ -87,7 +90,10 @@ const ProfessionalHeader = ({ onToggleSidebar, isDarkMode }) => {
             <Person />
           </Box>
           <Box>
-            <Typography variant="h5" sx={{ fontWeight: 600, color: "text.primary" }}>
+            <Typography
+              variant="h5"
+              sx={{ fontWeight: 600, color: "text.primary" }}
+            >
               User Profile
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -118,8 +124,8 @@ const ProfessionalStatsCard = ({ icon, title, value, color = "primary" }) => (
   >
     <Typography
       variant="h3"
-      sx={{ 
-        fontWeight: 700, 
+      sx={{
+        fontWeight: 700,
         mb: 1,
         color: `${color}.main`,
       }}
@@ -244,7 +250,7 @@ const Profile = () => {
         // Update user data in AuthContext
         updateUser(editFormData);
         setEditSuccess(true);
-        
+
         // Close dialog after a short delay
         setTimeout(() => {
           handleCloseEditDialog();
@@ -298,7 +304,9 @@ const Profile = () => {
   };
 
   return (
-    <ThemeProvider theme={isDarkMode ? professionalDarkTheme : professionalTheme}>
+    <ThemeProvider
+      theme={isDarkMode ? professionalDarkTheme : professionalTheme}
+    >
       <CssBaseline />
       <Box
         sx={{
@@ -380,10 +388,7 @@ const Profile = () => {
                       <Person sx={{ fontSize: "2.5rem" }} />
                     </Avatar>
 
-                    <Typography
-                      variant="h5"
-                      sx={{ fontWeight: 600, mb: 1 }}
-                    >
+                    <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
                       {user.name}
                     </Typography>
 
@@ -395,7 +400,12 @@ const Profile = () => {
                       {user.email}
                     </Typography>
 
-                    <Stack direction="row" spacing={1} justifyContent="center" sx={{ mb: 2 }}>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      justifyContent="center"
+                      sx={{ mb: 2 }}
+                    >
                       <Chip
                         icon={<CalendarToday />}
                         label={`Joined ${formatJoinDate(user.joinDate)}`}
@@ -438,7 +448,7 @@ const Profile = () => {
                     <ProfessionalStatsCard
                       icon={<TrendingUp />}
                       title="Health Score"
-                      value="85%"
+                      value="Under development"
                       color="success"
                     />
                   </Grid>
@@ -453,7 +463,14 @@ const Profile = () => {
                   >
                     <Grid container spacing={3}>
                       <Grid item xs={12} sm={6}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                            mb: 2,
+                          }}
+                        >
                           <Box
                             sx={{
                               display: "flex",
@@ -472,7 +489,10 @@ const Profile = () => {
                             <Typography variant="body2" color="text.secondary">
                               Email Address
                             </Typography>
-                            <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                            <Typography
+                              variant="body1"
+                              sx={{ fontWeight: 600 }}
+                            >
                               {user.email}
                             </Typography>
                           </Box>
@@ -480,7 +500,14 @@ const Profile = () => {
                       </Grid>
 
                       <Grid item xs={12} sm={6}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                            mb: 2,
+                          }}
+                        >
                           <Box
                             sx={{
                               display: "flex",
@@ -499,7 +526,10 @@ const Profile = () => {
                             <Typography variant="body2" color="text.secondary">
                               Member Since
                             </Typography>
-                            <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                            <Typography
+                              variant="body1"
+                              sx={{ fontWeight: 600 }}
+                            >
                               {formatJoinDate(user.joinDate)}
                             </Typography>
                           </Box>
@@ -509,7 +539,11 @@ const Profile = () => {
 
                     <Divider sx={{ my: 3 }} />
 
-                    <Stack direction="row" spacing={2} justifyContent="flex-end">
+                    <Stack
+                      direction="row"
+                      spacing={2}
+                      justifyContent="flex-end"
+                    >
                       <ProfessionalButton
                         variant="outlined"
                         onClick={() => navigate("/home")}

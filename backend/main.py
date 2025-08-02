@@ -143,11 +143,8 @@ app.add_middleware(
         "https://yourdomain.com",
         # Vercel deployment URLs
         "https://aihealthcheck-ma7c9ccwo-sandeeps-projects-a9908546.vercel.app",
-        "https://aihealthcheck-750zt65ct-sandeeps-projects-a9908546.vercel.app",
-        "https://aihealthcheck-8y5ujbjkc-sandeeps-projects-a9908546.vercel.app",
-        "https://aihealthcheck-iux6mg6e4-sandeeps-projects-a9908546.vercel.app",
         # Custom domain (if you set one up)
-        "https://ai-health-check.vercel.app"
+        "https://aihealthcheck.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],

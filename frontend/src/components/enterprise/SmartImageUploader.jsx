@@ -29,19 +29,70 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
 
+// Global camera stream tracker for aggressive cleanup
+let globalCameraStreams = new Set();
+
+// Add stream to global tracker
+const trackCameraStream = (stream) => {
+  if (stream) {
+    globalCameraStreams.add(stream);
+    console.log('🔴 Added stream to global tracker. Total streams:', globalCameraStreams.size);
+  }
+};
+
+// Remove stream from global tracker
+const untrackCameraStream = (stream) => {
+  if (stream) {
+    globalCameraStreams.delete(stream);
+    console.log('🔴 Removed stream from global tracker. Total streams:', globalCameraStreams.size);
+  }
+};
+
+// Emergency cleanup - stop ALL tracked camera streams
+const emergencyStopAllCameras = () => {
+  console.log('🔴 EMERGENCY: Stopping all tracked camera streams');
+  globalCameraStreams.forEach(stream => {
+    if (stream) {
+      stream.getTracks().forEach(track => {
+        if (track.readyState === 'live') {
+          console.log('🔴 Emergency stopping track:', track.kind);
+          track.stop();
+        }
+      });
+    }
+  });
+  globalCameraStreams.clear();
+  console.log('🔴 Emergency cleanup completed');
+};
+
 // Utility function to completely stop camera streams
 const stopCameraStream = (stream, videoElement = null) => {
+  console.log('🔴 stopCameraStream called');
+  
   if (stream) {
     console.log('🔴 Stopping camera stream with', stream.getTracks().length, 'tracks');
     stream.getTracks().forEach(track => {
       console.log('🔴 Stopping track:', track.kind, 'state:', track.readyState);
       track.stop();
+      // Double-check the track is stopped
+      setTimeout(() => {
+        console.log('🔴 Track state after stop:', track.kind, track.readyState);
+      }, 100);
     });
+    
+    // Remove from global tracker
+    untrackCameraStream(stream);
   }
   
   if (videoElement) {
     console.log('🔴 Clearing video element srcObject');
     videoElement.srcObject = null;
+    videoElement.load(); // Force reload to clear any cached stream
+    
+    // Additional aggressive cleanup
+    videoElement.pause();
+    videoElement.removeAttribute('src');
+    videoElement.load();
   }
   
   // Force garbage collection hint
@@ -221,6 +272,11 @@ const CameraCapture = ({ onCapture, onClose }) => {
     // Use utility function for complete cleanup
     stopCameraStream(stream, videoRef.current);
     
+    // Emergency cleanup as backup
+    setTimeout(() => {
+      emergencyStopAllCameras();
+    }, 500);
+    
     onClose();
   };
   
@@ -239,6 +295,9 @@ const CameraCapture = ({ onCapture, onClose }) => {
         
         currentStream = mediaStream;
         setStream(mediaStream);
+        
+        // Track this stream globally
+        trackCameraStream(mediaStream);
         
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
@@ -315,10 +374,38 @@ const CameraCapture = ({ onCapture, onClose }) => {
               </Typography>
             </Box>
           )}
+          
+          {/* Camera status indicator */}
+          {isReady && (
+            <Box sx={{ 
+              position: 'absolute', 
+              top: 8, 
+              left: 8, 
+              backgroundColor: 'rgba(255, 0, 0, 0.8)', 
+              color: 'white', 
+              px: 1, 
+              py: 0.5, 
+              borderRadius: 1,
+              fontSize: '0.75rem'
+            }}>
+              🔴 Camera Active
+            </Box>
+          )}
         </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
+        <Button 
+          onClick={() => {
+            console.log('🔴 Manual emergency stop triggered');
+            emergencyStopAllCameras();
+            handleClose();
+          }}
+          color="error"
+          variant="outlined"
+        >
+          Stop Camera
+        </Button>
         <Button
           onClick={handleCapture}
           variant="contained"
@@ -339,6 +426,38 @@ const SmartImageUploader = ({ onImageSelect, disabled = false, initialFile = nul
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Add global cleanup on component mount
+  React.useEffect(() => {
+    // Cleanup function when component unmounts
+    return () => {
+      console.log('🔴 SmartImageUploader unmounting - emergency cleanup');
+      emergencyStopAllCameras();
+    };
+  }, []);
+  
+  // Add window-level cleanup
+  React.useEffect(() => {
+    const handleBeforeUnload = () => {
+      console.log('🔴 Page unloading - emergency camera cleanup');
+      emergencyStopAllCameras();
+    };
+    
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        console.log('🔴 Page hidden - emergency camera cleanup');
+        emergencyStopAllCameras();
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
   
   // Simple file validation function
   const validateFile = (file, options = {}) => {
@@ -436,6 +555,11 @@ const SmartImageUploader = ({ onImageSelect, disabled = false, initialFile = nul
     setSelectedFile(file);
     onImageSelect?.(file);
     notifySuccess('Image captured successfully');
+    
+    // Force cleanup after capture
+    setTimeout(() => {
+      emergencyStopAllCameras();
+    }, 1000);
   };
   
   const handleRemoveImage = () => {
