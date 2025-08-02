@@ -48,6 +48,52 @@ const untrackCameraStream = (stream) => {
   }
 };
 
+// NUCLEAR OPTION - Force stop ALL media streams in the browser
+const nuclearStopAllMedia = async () => {
+  console.log('💥 NUCLEAR: Force stopping ALL media streams in browser');
+  
+  try {
+    // Method 1: Stop all video elements on the page
+    const allVideos = document.querySelectorAll('video');
+    allVideos.forEach(video => {
+      console.log('💥 Stopping video element:', video);
+      if (video.srcObject) {
+        const stream = video.srcObject;
+        stream.getTracks().forEach(track => {
+          console.log('💥 Force stopping track from video element:', track.kind);
+          track.stop();
+        });
+        video.srcObject = null;
+      }
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+    });
+    
+    // Method 2: Try to enumerate and stop all media devices
+    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      console.log('💥 Found media devices:', devices.length);
+    }
+    
+    // Method 3: Create a dummy stream and immediately stop it to force browser cleanup
+    try {
+      const dummyStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      console.log('💥 Created dummy stream for cleanup');
+      dummyStream.getTracks().forEach(track => {
+        console.log('💥 Stopping dummy track:', track.kind);
+        track.stop();
+      });
+    } catch (e) {
+      console.log('💥 Dummy stream creation failed (expected):', e.message);
+    }
+    
+    console.log('💥 Nuclear cleanup completed');
+  } catch (error) {
+    console.error('💥 Nuclear cleanup error:', error);
+  }
+};
+
 // Emergency cleanup - stop ALL tracked camera streams
 const emergencyStopAllCameras = () => {
   console.log('🔴 EMERGENCY: Stopping all tracked camera streams');
@@ -62,6 +108,12 @@ const emergencyStopAllCameras = () => {
     }
   });
   globalCameraStreams.clear();
+  
+  // Follow up with nuclear option
+  setTimeout(() => {
+    nuclearStopAllMedia();
+  }, 200);
+  
   console.log('🔴 Emergency cleanup completed');
 };
 
@@ -86,13 +138,29 @@ const stopCameraStream = (stream, videoElement = null) => {
   
   if (videoElement) {
     console.log('🔴 Clearing video element srcObject');
-    videoElement.srcObject = null;
-    videoElement.load(); // Force reload to clear any cached stream
     
-    // Additional aggressive cleanup
+    // Super aggressive video cleanup
+    if (videoElement.srcObject) {
+      const stream = videoElement.srcObject;
+      stream.getTracks().forEach(track => {
+        console.log('🔴 Force stopping track from video element:', track.kind);
+        track.stop();
+      });
+    }
+    
+    videoElement.srcObject = null;
     videoElement.pause();
     videoElement.removeAttribute('src');
+    videoElement.removeAttribute('srcObject');
     videoElement.load();
+    
+    // Force style changes to ensure browser releases camera
+    videoElement.style.display = 'none';
+    setTimeout(() => {
+      if (videoElement.parentNode) {
+        videoElement.style.display = '';
+      }
+    }, 100);
   }
   
   // Force garbage collection hint
@@ -426,6 +494,30 @@ const SmartImageUploader = ({ onImageSelect, disabled = false, initialFile = nul
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState(null);
+  const [cameraStatus, setCameraStatus] = useState('inactive'); // inactive, active, stopping
+  
+  // Check camera status periodically
+  React.useEffect(() => {
+    const checkCameraStatus = () => {
+      const allVideos = document.querySelectorAll('video');
+      let hasActiveCamera = false;
+      
+      allVideos.forEach(video => {
+        if (video.srcObject) {
+          const stream = video.srcObject;
+          const activeTracks = stream.getTracks().filter(track => track.readyState === 'live');
+          if (activeTracks.length > 0) {
+            hasActiveCamera = true;
+          }
+        }
+      });
+      
+      setCameraStatus(hasActiveCamera ? 'active' : 'inactive');
+    };
+    
+    const interval = setInterval(checkCameraStatus, 1000);
+    return () => clearInterval(interval);
+  }, []);
   
   // Add global cleanup on component mount
   React.useEffect(() => {
@@ -436,7 +528,7 @@ const SmartImageUploader = ({ onImageSelect, disabled = false, initialFile = nul
     };
   }, []);
   
-  // Add window-level cleanup
+  // Add window-level cleanup and keyboard shortcuts
   React.useEffect(() => {
     const handleBeforeUnload = () => {
       console.log('🔴 Page unloading - emergency camera cleanup');
@@ -450,12 +542,24 @@ const SmartImageUploader = ({ onImageSelect, disabled = false, initialFile = nul
       }
     };
     
+    const handleKeyDown = (e) => {
+      // Ctrl+Shift+S to force stop camera
+      if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+        e.preventDefault();
+        console.log('💥 Keyboard shortcut: Force stop camera');
+        nuclearStopAllMedia();
+        notifySuccess('Camera forcefully stopped via keyboard shortcut');
+      }
+    };
+    
     window.addEventListener('beforeunload', handleBeforeUnload);
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('keydown', handleKeyDown);
     
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
   
@@ -562,6 +666,12 @@ const SmartImageUploader = ({ onImageSelect, disabled = false, initialFile = nul
     }, 1000);
   };
   
+  const handleForceStopCamera = () => {
+    console.log('💥 User triggered force stop camera');
+    nuclearStopAllMedia();
+    notifySuccess('Camera forcefully stopped');
+  };
+  
   const handleRemoveImage = () => {
     setSelectedFile(null);
     onImageSelect?.(null);
@@ -616,7 +726,7 @@ const SmartImageUploader = ({ onImageSelect, disabled = false, initialFile = nul
               Supports: JPEG, PNG, WebP (max 50MB)
             </Typography>
             
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
               <Button
                 variant="outlined"
                 startIcon={<ImageIcon />}
@@ -635,6 +745,19 @@ const SmartImageUploader = ({ onImageSelect, disabled = false, initialFile = nul
                 disabled={disabled}
               >
                 Use Camera
+              </Button>
+              
+              <Button
+                variant="outlined"
+                color="error"
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleForceStopCamera();
+                }}
+                sx={{ fontSize: '0.75rem' }}
+              >
+                🔴 Force Stop Camera
               </Button>
             </Box>
           </motion.div>
@@ -659,6 +782,25 @@ const SmartImageUploader = ({ onImageSelect, disabled = false, initialFile = nul
       {error && (
         <Alert severity="error" sx={{ mt: 2 }}>
           {error}
+        </Alert>
+      )}
+      
+      {/* Camera Status Indicator */}
+      {cameraStatus === 'active' && (
+        <Alert 
+          severity="warning" 
+          sx={{ mt: 2 }}
+          action={
+            <Button 
+              color="inherit" 
+              size="small" 
+              onClick={handleForceStopCamera}
+            >
+              FORCE STOP
+            </Button>
+          }
+        >
+          🔴 Camera is still active! Use Ctrl+Shift+S or click FORCE STOP to turn it off.
         </Alert>
       )}
       
