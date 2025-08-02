@@ -330,74 +330,163 @@ const ImagePreview = ({ file, onRemove, onEnhance }) => {
 const CameraCapture = ({ onCapture, onClose }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const [stream, setStream] = useState(null);
+  const streamRef = useRef(null); // Use ref instead of state for immediate access
   const [isReady, setIsReady] = useState(false);
+  const [facingMode, setFacingMode] = useState('environment'); // 'user' for front, 'environment' for back
+  const [availableCameras, setAvailableCameras] = useState([]);
+  const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
   
-  // Enhanced close handler that ensures camera cleanup
+  // Get available cameras
+  React.useEffect(() => {
+    const getAvailableCameras = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        setAvailableCameras(videoDevices);
+        console.log('📱 Available cameras:', videoDevices.length);
+      } catch (error) {
+        console.error('Error getting cameras:', error);
+      }
+    };
+    
+    getAvailableCameras();
+  }, []);
+  
+  // Stop current stream completely
+  const stopCurrentStream = () => {
+    console.log('🔴 Stopping current stream');
+    
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        console.log('🔴 Stopping track:', track.kind, track.readyState);
+        track.stop();
+        
+        // Force track to end state
+        if (track.readyState !== 'ended') {
+          try {
+            track.enabled = false;
+          } catch (e) {
+            console.log('🔴 Could not disable track:', e);
+          }
+        }
+      });
+      
+      // Clear video element immediately
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+        videoRef.current.load();
+      }
+      
+      untrackCameraStream(streamRef.current);
+      streamRef.current = null;
+    }
+  };
+  
+  // Start camera with specific constraints
+  const startCamera = async (constraints = null) => {
+    console.log('📱 Starting camera with constraints:', constraints);
+    
+    // Stop any existing stream first
+    stopCurrentStream();
+    setIsReady(false);
+    
+    try {
+      const defaultConstraints = {
+        video: {
+          width: { ideal: 1920, max: 1920 },
+          height: { ideal: 1080, max: 1080 },
+          facingMode: facingMode
+        }
+      };
+      
+      // Use specific device if available
+      if (constraints && constraints.deviceId) {
+        defaultConstraints.video.deviceId = { exact: constraints.deviceId };
+        delete defaultConstraints.video.facingMode; // Remove facingMode when using specific device
+      }
+      
+      const mediaStream = await navigator.mediaDevices.getUserMedia(defaultConstraints);
+      
+      streamRef.current = mediaStream;
+      trackCameraStream(mediaStream);
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+        
+        // Wait for video to be ready
+        const handleLoadedMetadata = () => {
+          console.log('📱 Camera ready');
+          setIsReady(true);
+        };
+        
+        videoRef.current.onloadedmetadata = handleLoadedMetadata;
+        
+        // Fallback timeout
+        setTimeout(() => {
+          if (!isReady) {
+            console.log('📱 Camera ready (timeout fallback)');
+            setIsReady(true);
+          }
+        }, 2000);
+      }
+      
+    } catch (error) {
+      console.error('📱 Error accessing camera:', error);
+      setIsReady(false);
+    }
+  };
+  
+  // Switch between front and back camera
+  const switchCamera = () => {
+    if (availableCameras.length > 1) {
+      const nextIndex = (currentCameraIndex + 1) % availableCameras.length;
+      setCurrentCameraIndex(nextIndex);
+      const nextCamera = availableCameras[nextIndex];
+      startCamera({ deviceId: nextCamera.deviceId });
+    } else {
+      // Fallback to facingMode switching
+      const newFacingMode = facingMode === 'user' ? 'environment' : 'user';
+      setFacingMode(newFacingMode);
+      startCamera();
+    }
+  };
+  
+  // Enhanced close handler
   const handleClose = () => {
-    console.log('🔴 CameraCapture handleClose: Stopping camera before close');
+    console.log('🔴 CameraCapture handleClose');
+    stopCurrentStream();
     
-    // Use utility function for complete cleanup
-    stopCameraStream(stream, videoRef.current);
-    
-    // Emergency cleanup as backup
+    // Nuclear cleanup as backup
     setTimeout(() => {
-      emergencyStopAllCameras();
-    }, 500);
+      nuclearStopAllMedia();
+    }, 100);
     
     onClose();
   };
   
+  // Initialize camera on mount
   React.useEffect(() => {
-    let currentStream = null;
-    
-    const startCamera = async () => {
-      try {
-        const mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-            facingMode: 'environment', // Use back camera on mobile
-          },
-        });
-        
-        currentStream = mediaStream;
-        setStream(mediaStream);
-        
-        // Track this stream globally
-        trackCameraStream(mediaStream);
-        
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
-          videoRef.current.onloadedmetadata = () => {
-            setIsReady(true);
-          };
-        }
-      } catch (error) {
-        console.error('Error accessing camera:', error);
-      }
-    };
-    
     startCamera();
     
-    // Cleanup function - this is crucial for stopping the camera
+    // Cleanup on unmount
     return () => {
-      console.log('🔴 CameraCapture cleanup: Stopping camera stream');
-      
-      // Use utility function for complete cleanup
-      stopCameraStream(currentStream, videoRef.current);
-      stopCameraStream(stream); // Backup cleanup
-      
-      console.log('🔴 Camera cleanup completed');
+      console.log('🔴 CameraCapture unmounting');
+      stopCurrentStream();
     };
-  }, []); // Empty dependency array is correct here
+  }, []); // Only run once on mount
   
   const handleCapture = () => {
-    if (!videoRef.current || !canvasRef.current) return;
+    if (!videoRef.current || !canvasRef.current || !isReady) return;
     
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
+    
+    // Ensure video has valid dimensions
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      console.error('📱 Invalid video dimensions');
+      return;
+    }
     
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
@@ -409,7 +498,12 @@ const CameraCapture = ({ onCapture, onClose }) => {
       
       // Stop camera immediately after capture
       console.log('🔴 Stopping camera after capture');
-      stopCameraStream(stream, video);
+      stopCurrentStream();
+      
+      // Nuclear cleanup as backup
+      setTimeout(() => {
+        nuclearStopAllMedia();
+      }, 100);
       
       onCapture(file);
       onClose();
@@ -443,37 +537,73 @@ const CameraCapture = ({ onCapture, onClose }) => {
             </Box>
           )}
           
-          {/* Camera status indicator */}
-          {isReady && (
-            <Box sx={{ 
-              position: 'absolute', 
-              top: 8, 
-              left: 8, 
-              backgroundColor: 'rgba(255, 0, 0, 0.8)', 
-              color: 'white', 
-              px: 1, 
-              py: 0.5, 
-              borderRadius: 1,
-              fontSize: '0.75rem'
-            }}>
-              🔴 Camera Active
-            </Box>
-          )}
+          {/* Camera controls overlay */}
+          <Box sx={{ 
+            position: 'absolute', 
+            top: 8, 
+            left: 8,
+            right: 8,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start'
+          }}>
+            {/* Camera status indicator */}
+            {isReady && (
+              <Chip
+                label="🔴 Camera Active"
+                size="small"
+                sx={{
+                  backgroundColor: 'rgba(255, 0, 0, 0.8)',
+                  color: 'white',
+                  fontSize: '0.75rem'
+                }}
+              />
+            )}
+            
+            {/* Camera switch button */}
+            {(availableCameras.length > 1 || true) && (
+              <Tooltip title="Switch Camera (Front/Back)">
+                <IconButton
+                  onClick={switchCamera}
+                  disabled={!isReady}
+                  sx={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    color: 'white',
+                    '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.9)' },
+                  }}
+                >
+                  <CameraAlt />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
         </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
+        
+        <Button 
+          onClick={switchCamera}
+          disabled={!isReady}
+          variant="outlined"
+          startIcon={<CameraAlt />}
+        >
+          Switch Camera ({availableCameras.length > 1 ? `${currentCameraIndex + 1}/${availableCameras.length}` : facingMode === 'user' ? 'Front' : 'Back'})
+        </Button>
+        
         <Button 
           onClick={() => {
             console.log('🔴 Manual emergency stop triggered');
-            emergencyStopAllCameras();
+            stopCurrentStream();
+            nuclearStopAllMedia();
             handleClose();
           }}
           color="error"
           variant="outlined"
         >
-          Stop Camera
+          Force Stop
         </Button>
+        
         <Button
           onClick={handleCapture}
           variant="contained"
