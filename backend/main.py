@@ -137,9 +137,20 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "https://yourdomain.com"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000", 
+        "https://yourdomain.com",
+        # Vercel deployment URLs
+        "https://aihealthcheck-ma7c9ccwo-sandeeps-projects-a9908546.vercel.app",
+        "https://aihealthcheck-750zt65ct-sandeeps-projects-a9908546.vercel.app",
+        "https://aihealthcheck-8y5ujbjkc-sandeeps-projects-a9908546.vercel.app",
+        "https://aihealthcheck-iux6mg6e4-sandeeps-projects-a9908546.vercel.app",
+        # Custom domain (if you set one up)
+        "https://ai-health-check.vercel.app"
+    ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     max_age=3600,
 )

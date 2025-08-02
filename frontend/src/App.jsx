@@ -4,7 +4,7 @@ import { CssBaseline } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import './index.css';
 import Login from './pages/Login';
-import Signup from './pages/Signup';
+import Signup from './pages/SignUp';
 import Home from './pages/Home';
 import History from './pages/History';
 import Profile from './pages/Profile';
