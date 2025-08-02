@@ -90,105 +90,45 @@ def generate_beep_audio(input_text: str, output_path: Optional[str] = None) -> b
 
 def text_to_speech_with_google(input_text: str, output_path: Optional[str] = None) -> Optional[bytes]:
     """
-    Text-to-speech using Google Translate TTS API (free, no token required)
+    Text-to-speech using Google Translate TTS API (optimized for speed)
+    Uses only the working Google TTS Minimal endpoint
     """
     try:
-        logger.info(f"🌐 Google TTS requested for: {input_text[:50]}...")
+        logger.info(f"🌐 Google TTS Minimal requested for: {input_text[:50]}...")
         
-        # Limit text length
-        if len(input_text) > 500:
-            input_text = input_text[:497] + "..."
+        # Limit text length for faster processing
+        if len(input_text) > 200:
+            input_text = input_text[:197] + "..."
         
-        # Try multiple Google TTS endpoints with different strategies
-        services = [
-            {
-                'name': 'Google TTS Primary',
-                'url': 'https://translate.google.com/translate_tts',
-                'params': {
-                    'ie': 'UTF-8',
-                    'q': input_text,
-                    'tl': 'en',
-                    'client': 'tw-ob',
-                    'idx': '0',
-                    'total': '1',
-                    'textlen': str(len(input_text))
-                },
-                'headers': {
-                    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Referer': 'https://translate.google.com/',
-                    'Accept': 'audio/mpeg, audio/wav, audio/*',
-                    'Accept-Language': 'en-US,en;q=0.9',
-                    'Accept-Encoding': 'gzip, deflate, br',
-                    'Connection': 'keep-alive',
-                    'Sec-Fetch-Dest': 'audio',
-                    'Sec-Fetch-Mode': 'cors',
-                    'Sec-Fetch-Site': 'same-origin'
-                }
-            },
-            {
-                'name': 'Google TTS Alternative',
-                'url': 'https://translate.google.com/translate_tts',
-                'params': {
-                    'ie': 'UTF-8',
-                    'q': input_text,
-                    'tl': 'en-us',
-                    'client': 'gtx',
-                    'idx': '0',
-                    'total': '1'
-                },
-                'headers': {
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept': 'audio/*',
-                    'Accept-Language': 'en-US,en;q=0.8',
-                    'Cache-Control': 'no-cache'
-                }
-            },
-            {
-                'name': 'Google TTS Minimal',
-                'url': 'https://translate.google.com/translate_tts',
-                'params': {
-                    'ie': 'UTF-8',
-                    'q': input_text[:200],  # Shorter text
-                    'tl': 'en',
-                    'client': 'gtx'
-                },
-                'headers': {
-                    'User-Agent': 'curl/7.68.0',
-                    'Accept': '*/*'
-                }
-            }
-        ]
+        # Use only the working Google TTS Minimal configuration
+        url = 'https://translate.google.com/translate_tts'
+        params = {
+            'ie': 'UTF-8',
+            'q': input_text,
+            'tl': 'en',
+            'client': 'gtx'
+        }
+        headers = {
+            'User-Agent': 'curl/7.68.0',
+            'Accept': '*/*'
+        }
         
-        for service in services:
-            try:
-                logger.info(f"🌐 Trying {service['name']}...")
-                response = requests.get(
-                    service['url'], 
-                    params=service['params'], 
-                    headers=service['headers'], 
-                    timeout=15
-                )
-                
-                if response.status_code == 200 and len(response.content) > 1000:
-                    logger.info(f"✅ {service['name']} successful! Generated {len(response.content)} bytes")
-                    
-                    # Save to output_path if provided
-                    if output_path:
-                        with open(output_path, "wb") as f:
-                            f.write(response.content)
-                        logger.info(f"✅ Audio saved to: {output_path}")
-                    
-                    return response.content
-                else:
-                    logger.warning(f"⚠️ {service['name']} failed: {response.status_code}")
-                    
-            except Exception as e:
-                logger.warning(f"⚠️ {service['name']} error: {e}")
-                continue
+        logger.info("🌐 Calling Google TTS Minimal (fast)...")
+        response = requests.get(url, params=params, headers=headers, timeout=10)
         
-        # If we get here, all services failed
-        logger.warning("⚠️ All Google TTS services failed")
-        return None
+        if response.status_code == 200 and len(response.content) > 1000:
+            logger.info(f"✅ Google TTS Minimal successful! Generated {len(response.content)} bytes")
+            
+            # Save to output_path if provided
+            if output_path:
+                with open(output_path, "wb") as f:
+                    f.write(response.content)
+                logger.info(f"✅ Audio saved to: {output_path}")
+            
+            return response.content
+        else:
+            logger.warning(f"⚠️ Google TTS Minimal failed: {response.status_code}")
+            return None
             
     except Exception as e:
         logger.error(f"❌ Google TTS error: {e}")
@@ -309,37 +249,18 @@ def text_to_speech_with_voicerss(input_text: str, output_path: Optional[str] = N
 
 def text_to_speech_with_elevenlabs(input_text: str, output_path: Optional[str] = None, voice_preference: str = "google") -> Optional[bytes]:
     """
-    Main TTS function with multiple fallbacks:
-    1. Google TTS (free, high quality)
-    2. VoiceRSS TTS (alternative free service)
-    3. pyttsx3 local TTS (system voices)
-    4. Beep audio (audible confirmation)
+    Optimized TTS function - uses only Google TTS Minimal for speed
     """
-    logger.info(f"🎙️ TTS requested for: {input_text[:50]}...")
+    logger.info(f"🎙️ Fast TTS requested for: {input_text[:50]}...")
     
-    # Try Google TTS first
-    logger.info("🌐 Trying Google TTS...")
+    # Use only Google TTS Minimal (the one that works)
     result = text_to_speech_with_google(input_text, output_path)
     if result:
-        logger.info("✅ Using Google TTS")
+        logger.info("✅ Using Google TTS Minimal")
         return result
     
-    # Try VoiceRSS as alternative
-    logger.info("🎙️ Trying VoiceRSS TTS...")
-    result = text_to_speech_with_voicerss(input_text, output_path)
-    if result:
-        logger.info("✅ Using VoiceRSS TTS")
-        return result
-    
-    # Try pyttsx3 local TTS
-    logger.info("🔊 Trying pyttsx3 local TTS...")
-    result = text_to_speech_with_pyttsx3(input_text, output_path)
-    if result:
-        logger.info("✅ Using pyttsx3 local TTS")
-        return result
-    
-    # Final fallback to beep audio (audible)
-    logger.warning("🔊 All TTS services failed - using audible beep fallback")
+    # If Google TTS fails, use beep audio as fallback
+    logger.warning("🔊 Google TTS failed - using audible beep fallback")
     return generate_beep_audio(input_text, output_path)
 
 # Compatibility alias

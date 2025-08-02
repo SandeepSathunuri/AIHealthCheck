@@ -378,7 +378,7 @@ def process_audio_image(audio_data, image_data, current_user):
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(fast_transcription)
             try:
-                transcription = future.result(timeout=15)  # 15s timeout
+                transcription = future.result(timeout=10)  # 10s timeout (optimized)
             except concurrent.futures.TimeoutError:
                 transcription = "Audio transcription timeout - proceeding with image analysis"
             except Exception as e:
@@ -401,7 +401,7 @@ def process_audio_image(audio_data, image_data, current_user):
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(fast_image_analysis)
             try:
-                ai_analysis = future.result(timeout=20)  # 20s timeout
+                ai_analysis = future.result(timeout=15)  # 15s timeout (optimized)
                 
                 # Handle new response format with detailed analysis and recommendations
                 if isinstance(ai_analysis, dict):
@@ -464,7 +464,7 @@ def process_audio_image(audio_data, image_data, current_user):
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(quick_tts_generation)
             try:
-                output_audio = future.result(timeout=90)  # 90 second limit for model loading
+                output_audio = future.result(timeout=15)  # 15s timeout (optimized for Google TTS Minimal)
                 if output_audio:
                     audio_output_id = fs.put(output_audio, filename="doctor_response.mp3")
                     print(f"🔊 IMMEDIATE TTS completed and saved: {audio_output_id}")
