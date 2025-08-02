@@ -10,6 +10,9 @@ import {
   TableRow,
   IconButton,
   Tooltip,
+  Paper,
+  Chip,
+  Avatar,
 } from '@mui/material';
 import {
   Delete,
@@ -18,8 +21,9 @@ import {
   Pause,
   Image,
   Visibility,
+  MedicalServices,
 } from '@mui/icons-material';
-import GlassCard from '../ui/GlassCard';
+import ProfessionalCard from '../ui/ProfessionalCard';
 import { getAudioUrl, getImageUrl } from '../../config/api';
 
 const HistoryTable = ({
@@ -89,120 +93,83 @@ const HistoryTable = ({
   };
 
   return (
-    <GlassCard>
+    <Paper elevation={1} sx={{ borderRadius: 2, overflow: 'hidden' }}>
       <TableContainer>
         <Table>
           <TableHead>
-            <TableRow>
-              <TableCell
-                sx={{
-                  color: isDarkMode ? "white" : "black",
-                  fontWeight: 600,
-                  borderBottom: isDarkMode 
-                    ? "1px solid rgba(255, 255, 255, 0.12)" 
-                    : "1px solid rgba(0, 0, 0, 0.12)",
-                }}
-              >
-                Date
+            <TableRow sx={{ bgcolor: 'primary.main', height: '40px' }}>
+              <TableCell sx={{ color: 'white', fontWeight: 600, py: 0.5, fontSize: '0.8rem' }}>
+                Date & ID
               </TableCell>
-              <TableCell
-                sx={{
-                  color: isDarkMode ? "white" : "black",
-                  fontWeight: 600,
-                  borderBottom: isDarkMode 
-                    ? "1px solid rgba(255, 255, 255, 0.12)" 
-                    : "1px solid rgba(0, 0, 0, 0.12)",
-                }}
-              >
-                Image
+              <TableCell sx={{ color: 'white', fontWeight: 600, py: 0.5, fontSize: '0.8rem' }}>
+                Medical Image
               </TableCell>
-              <TableCell
-                sx={{
-                  color: isDarkMode ? "white" : "black",
-                  fontWeight: 600,
-                  borderBottom: isDarkMode 
-                    ? "1px solid rgba(255, 255, 255, 0.12)" 
-                    : "1px solid rgba(0, 0, 0, 0.12)",
-                }}
-              >
+              <TableCell sx={{ color: 'white', fontWeight: 600, py: 0.5, fontSize: '0.8rem' }}>
                 Voice Input
               </TableCell>
-              <TableCell
-                sx={{
-                  color: isDarkMode ? "white" : "black",
-                  fontWeight: 600,
-                  borderBottom: isDarkMode 
-                    ? "1px solid rgba(255, 255, 255, 0.12)" 
-                    : "1px solid rgba(0, 0, 0, 0.12)",
-                }}
-              >
+              <TableCell sx={{ color: 'white', fontWeight: 600, py: 0.5, fontSize: '0.8rem' }}>
                 AI Analysis
               </TableCell>
-              <TableCell
-                sx={{
-                  color: isDarkMode ? "white" : "black",
-                  fontWeight: 600,
-                  borderBottom: isDarkMode 
-                    ? "1px solid rgba(255, 255, 255, 0.12)" 
-                    : "1px solid rgba(0, 0, 0, 0.12)",
-                }}
-              >
-                Audio
+              <TableCell sx={{ color: 'white', fontWeight: 600, py: 0.5, fontSize: '0.8rem' }}>
+                Audio Output
               </TableCell>
-              <TableCell
-                sx={{
-                  color: isDarkMode ? "white" : "black",
-                  fontWeight: 600,
-                  borderBottom: isDarkMode 
-                    ? "1px solid rgba(255, 255, 255, 0.12)" 
-                    : "1px solid rgba(0, 0, 0, 0.12)",
-                }}
-              >
+              <TableCell sx={{ color: 'white', fontWeight: 600, py: 0.5, fontSize: '0.8rem' }}>
                 Actions
               </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {records.map((record) => (
-              <TableRow key={record.id}>
-                <TableCell
-                  sx={{
-                    color: isDarkMode ? "rgba(255, 255, 255, 0.8)" : "rgba(0, 0, 0, 0.8)",
-                    borderBottom: isDarkMode 
-                      ? "1px solid rgba(255, 255, 255, 0.08)" 
-                      : "1px solid rgba(0, 0, 0, 0.08)",
-                  }}
-                >
-                  <Typography variant="body2">
-                    {formatDate(record.createdAt)}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ color: isDarkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }}
-                  >
-                    #{record.id?.slice(-6) || "N/A"}
-                  </Typography>
+            {records.map((record, index) => (
+              <TableRow 
+                key={record.id}
+                sx={{ 
+                  '&:hover': { bgcolor: 'action.hover' },
+                  bgcolor: index % 2 === 0 ? 'background.default' : 'background.paper',
+                  height: '45px', // Very compact row height
+                }}
+              >
+                <TableCell sx={{ py: 0.5 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Avatar
+                      sx={{
+                        width: 24,
+                        height: 24,
+                        bgcolor: 'secondary.main',
+                        fontSize: '0.6rem',
+                      }}
+                    >
+                      <MedicalServices />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.75rem', lineHeight: 1.2 }}>
+                        {formatDate(record.createdAt)}
+                      </Typography>
+                      <Chip
+                        label={`#${record.id?.slice(-6) || "N/A"}`}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontSize: '0.6rem', height: 16, mt: 0.25 }}
+                      />
+                    </Box>
+                  </Box>
                 </TableCell>
 
-                <TableCell
-                  sx={{ borderBottom: isDarkMode 
-                    ? "1px solid rgba(255, 255, 255, 0.08)" 
-                    : "1px solid rgba(0, 0, 0, 0.08)" }}
-                >
+                <TableCell sx={{ py: 0.5 }}>
                   {record.imagePath ? (
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                       <Box
                         sx={{
-                          width: 60,
-                          height: 60,
-                          borderRadius: 2,
+                          width: 32,
+                          height: 32,
+                          borderRadius: 1,
                           overflow: "hidden",
-                          background: isDarkMode ? "rgba(0, 0, 0, 0.3)" : "rgba(255, 255, 255, 0.3)",
+                          border: 1,
+                          borderColor: 'divider',
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           cursor: "pointer",
-                          transition: "none",
+                          '&:hover': { borderColor: 'primary.main' },
                         }}
                         onClick={() =>
                           onViewImage(
@@ -233,10 +200,10 @@ const HistoryTable = ({
                             height: "100%",
                           }}
                         >
-                          <Image sx={{ color: isDarkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }} />
+                          <Image color="disabled" />
                         </Box>
                       </Box>
-                      <Tooltip title="View Image">
+                      <Tooltip title="View Full Image">
                         <IconButton
                           size="small"
                           onClick={() =>
@@ -245,73 +212,73 @@ const HistoryTable = ({
                               `Analysis #${record.id?.slice(-6)}`
                             )
                           }
-                          sx={{ color: "#00d4ff", transition: "none" }}
+                          color="primary"
                         >
                           <Visibility />
                         </IconButton>
                       </Tooltip>
                     </Box>
                   ) : (
-                    <Typography
-                      variant="body2"
-                      sx={{ color: isDarkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }}
-                    >
-                      No image
-                    </Typography>
+                    <Chip
+                      label="No Image"
+                      size="small"
+                      variant="outlined"
+                      color="default"
+                    />
                   )}
                 </TableCell>
 
-                <TableCell
-                  sx={{
-                    color: isDarkMode ? "rgba(255, 255, 255, 0.8)" : "rgba(0, 0, 0, 0.8)",
-                    borderBottom: isDarkMode 
-                      ? "1px solid rgba(255, 255, 255, 0.08)" 
-                      : "1px solid rgba(0, 0, 0, 0.08)",
-                    maxWidth: 200,
-                  }}
-                >
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: "vertical",
-                    }}
-                  >
-                    {record.transcription || "No transcription"}
-                  </Typography>
+                <TableCell sx={{ maxWidth: 200, py: 0.5 }}>
+                  {record.transcription ? (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        fontSize: '0.75rem',
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {record.transcription}
+                    </Typography>
+                  ) : (
+                    <Chip
+                      label="No Voice Input"
+                      size="small"
+                      variant="outlined"
+                      color="default"
+                      sx={{ fontSize: '0.65rem', height: 18 }}
+                    />
+                  )}
                 </TableCell>
 
-                <TableCell
-                  sx={{
-                    color: isDarkMode ? "rgba(255, 255, 255, 0.8)" : "rgba(0, 0, 0, 0.8)",
-                    borderBottom: isDarkMode 
-                      ? "1px solid rgba(255, 255, 255, 0.08)" 
-                      : "1px solid rgba(0, 0, 0, 0.08)",
-                    maxWidth: 250,
-                  }}
-                >
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: "vertical",
-                    }}
-                  >
-                    {record.doctorResponse || "No analysis"}
-                  </Typography>
+                <TableCell sx={{ maxWidth: 250, py: 0.5 }}>
+                  {record.doctorResponse ? (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        fontSize: '0.75rem',
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {record.doctorResponse}
+                    </Typography>
+                  ) : (
+                    <Chip
+                      label="No Analysis"
+                      size="small"
+                      variant="outlined"
+                      color="default"
+                      sx={{ fontSize: '0.65rem', height: 18 }}
+                    />
+                  )}
                 </TableCell>
 
-                <TableCell
-                  sx={{ borderBottom: isDarkMode 
-                    ? "1px solid rgba(255, 255, 255, 0.08)" 
-                    : "1px solid rgba(0, 0, 0, 0.08)" }}
-                >
+                <TableCell sx={{ py: 0.5 }}>
                   {record.audioOutputPath ? (
                     <Tooltip
                       title={
@@ -324,47 +291,44 @@ const HistoryTable = ({
                         onClick={() =>
                           handlePlayAudio(record.audioOutputPath, record.id)
                         }
-                        sx={{
-                          color:
-                            playingAudio === record.id ? "#fa709a" : "#43e97b",
-                          transition: "none",
-                        }}
+                        color={playingAudio === record.id ? "error" : "success"}
+                        size="small"
+                        sx={{ p: 0.5 }}
                       >
-                        {playingAudio === record.id ? <Pause /> : <PlayArrow />}
+                        {playingAudio === record.id ? <Pause sx={{ fontSize: 16 }} /> : <PlayArrow sx={{ fontSize: 16 }} />}
                       </IconButton>
                     </Tooltip>
                   ) : (
-                    <Typography
-                      variant="body2"
-                      sx={{ color: isDarkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }}
-                    >
-                      No audio
-                    </Typography>
+                    <Chip
+                      label="No Audio"
+                      size="small"
+                      variant="outlined"
+                      color="default"
+                      sx={{ fontSize: '0.65rem', height: 18 }}
+                    />
                   )}
                 </TableCell>
 
-                <TableCell
-                  sx={{ borderBottom: isDarkMode 
-                    ? "1px solid rgba(255, 255, 255, 0.08)" 
-                    : "1px solid rgba(0, 0, 0, 0.08)" }}
-                >
-                  <Box sx={{ display: "flex", gap: 1 }}>
+                <TableCell sx={{ py: 0.5 }}>
+                  <Box sx={{ display: "flex", gap: 0.25 }}>
                     <Tooltip title="Edit Record">
                       <IconButton
                         size="small"
                         onClick={() => onEdit(record)}
-                        sx={{ color: "#00d4ff", transition: "none" }}
+                        color="primary"
+                        sx={{ p: 0.5 }}
                       >
-                        <Edit />
+                        <Edit sx={{ fontSize: 16 }} />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Delete Record">
                       <IconButton
                         size="small"
                         onClick={() => onDelete(record.id)}
-                        sx={{ color: "#fa709a", transition: "none" }}
+                        color="error"
+                        sx={{ p: 0.5 }}
                       >
-                        <Delete />
+                        <Delete sx={{ fontSize: 16 }} />
                       </IconButton>
                     </Tooltip>
                   </Box>
@@ -374,7 +338,7 @@ const HistoryTable = ({
           </TableBody>
         </Table>
       </TableContainer>
-    </GlassCard>
+    </Paper>
   );
 };
 

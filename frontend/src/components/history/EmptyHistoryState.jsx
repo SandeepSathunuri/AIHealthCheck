@@ -1,62 +1,54 @@
 import React from "react";
-import { Box, Typography, Button } from "@mui/material";
-import { History as HistoryIcon } from "@mui/icons-material";
-import GlassCard from "../ui/GlassCard";
+import { Box, Typography, Paper, Avatar } from "@mui/material";
+import { History as HistoryIcon, Add } from "@mui/icons-material";
+import ProfessionalButton from "../ui/ProfessionalButton";
 
 const EmptyHistoryState = ({ isDarkMode }) => (
-  <GlassCard
+  <Paper
+    elevation={1}
     sx={{
-      transition: "none",
-      transform: "none",
-      "&:hover": {
-        transform: "none",
-        boxShadow: "none",
-      },
+      textAlign: "center",
+      py: 8,
+      px: 4,
+      borderRadius: 3,
+      bgcolor: "background.paper",
     }}
   >
-    <Box sx={{ textAlign: "center", py: 8 }}>
-      <HistoryIcon
-        sx={{
-          fontSize: 80,
-          color: isDarkMode ? "rgba(255, 255, 255, 0.3)" : "rgba(0, 0, 0, 0.3)",
-          mb: 3,
-        }}
-      />
-      <Typography
-        variant="h5"
-        sx={{ color: isDarkMode ? "white" : "black", mb: 2, fontWeight: 600 }}
-      >
-        No Medical Records Found
-      </Typography>
-      <Typography
-        variant="body1"
-        sx={{
-          color: isDarkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)",
-          mb: 4,
-        }}
-      >
-        Start by creating your first medical analysis to see your history here.
-      </Typography>
-      <Button
-        variant="contained"
-        onClick={() => (window.location.href = "/home")}
-        sx={{
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          color: "white",
-          px: 4,
-          py: 1.5,
-          borderRadius: 2,
-          fontWeight: 600,
-          textTransform: "none",
-          "&:hover": {
-            background: "linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)",
-          },
-        }}
-      >
-        Create Analysis
-      </Button>
-    </Box>
-  </GlassCard>
+    <Avatar
+      sx={{
+        width: 80,
+        height: 80,
+        bgcolor: "primary.main",
+        mx: "auto",
+        mb: 3,
+      }}
+    >
+      <HistoryIcon sx={{ fontSize: 40 }} />
+    </Avatar>
+    <Typography
+      variant="h4"
+      sx={{ mb: 2, fontWeight: 600, color: "text.primary" }}
+    >
+      No Medical Records Found
+    </Typography>
+    <Typography
+      variant="body1"
+      color="text.secondary"
+      sx={{ mb: 4, maxWidth: 400, mx: "auto" }}
+    >
+      Start by creating your first medical analysis to build your comprehensive health history. 
+      Our AI will help you track and analyze your medical journey.
+    </Typography>
+    <ProfessionalButton
+      variant="contained"
+      size="large"
+      onClick={() => (window.location.href = "/home")}
+      icon={<Add />}
+      color="primary"
+    >
+      Create First Analysis
+    </ProfessionalButton>
+  </Paper>
 );
 
 export default EmptyHistoryState;

@@ -6,9 +6,10 @@ import {
   Pagination,
   useMediaQuery,
   CssBaseline,
+  Paper,
 } from "@mui/material";
 import { ThemeProvider } from "@mui/material/styles";
-import { darkTheme, lightTheme } from "../styles/theme";
+import { professionalTheme, professionalDarkTheme } from "../styles/professionalTheme";
 import ModernSidebar from "../components/ui/ModernSidebar";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 import HistoryHeader from "../components/history/HistoryHeader";
@@ -17,6 +18,8 @@ import HistoryTable from "../components/history/HistoryTable";
 import HistoryFilterMenu from "../components/history/HistoryFilterMenu";
 import ImagePreviewDialog from "../components/history/ImagePreviewDialog";
 import EmptyHistoryState from "../components/history/EmptyHistoryState";
+import AuthRequired from "../components/auth/AuthRequired";
+
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useThemeMode } from "../context/ThemeContext";
@@ -46,8 +49,8 @@ const History = () => {
     hasAudio: "all",
   });
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
-  const isSmallScreen = useMediaQuery(darkTheme.breakpoints.down("md"));
+  const { user, logout, isAuthenticated } = useAuth();
+  const isSmallScreen = useMediaQuery((theme) => theme.breakpoints.down("md"));
 
   const recordsPerPage = 10;
 
@@ -222,25 +225,52 @@ const History = () => {
 
   useEffect(() => {
     const fetchHistory = async () => {
+      // Check if user is authenticated first
+      if (!isAuthenticated) {
+        console.log("🔒 User not authenticated, redirecting to login");
+        navigate("/login");
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
         const token = localStorage.getItem("token");
+        
+        console.log("🔍 Fetching history with token:", token ? `${token.substring(0, 20)}...` : "No token");
+        console.log("🔍 User authenticated:", isAuthenticated);
+        console.log("🔍 User data:", user);
+        
         if (!token) {
           setError("No authentication token found. Please log in.");
           navigate("/login");
           return;
         }
 
+        console.log("📡 Making request to:", API_ENDPOINTS.HISTORY);
         const res = await fetch(API_ENDPOINTS.HISTORY, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
         });
 
+        console.log("📡 Response status:", res.status);
+
         if (!res.ok) {
+          if (res.status === 401 || res.status === 403) {
+            // Token might be expired or invalid
+            console.log("🔒 Authentication failed, redirecting to login");
+            logout(); // Use the logout function from AuthContext
+            navigate("/login");
+            return;
+          }
           throw new Error(`HTTP error! status: ${res.status}`);
         }
 
         const data = await res.json();
+        console.log("📡 Response data:", data);
+        
         if (data.success) {
           setHistory(data.history || []);
         } else {
@@ -248,16 +278,22 @@ const History = () => {
         }
       } catch (err) {
         console.error("Error fetching history:", err);
-        setError(
-          "Unable to connect to the server. Please ensure the backend is running."
-        );
+        if (err.message.includes("401") || err.message.includes("403")) {
+          setError("Session expired. Please log in again.");
+          logout();
+          navigate("/login");
+        } else {
+          setError(
+            "Unable to connect to the server. Please ensure the backend is running."
+          );
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchHistory();
-  }, [navigate]);
+  }, [navigate, isAuthenticated, user, logout]);
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this record?")) {
@@ -295,19 +331,16 @@ const History = () => {
   };
 
   return (
-    <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
+    <ThemeProvider theme={isDarkMode ? professionalDarkTheme : professionalTheme}>
       <CssBaseline />
       <Box
         sx={{
           minHeight: "100vh",
-          background: isDarkMode
-            ? "linear-gradient(135deg, #0a0a1e 0%, #1a1a3a 50%, #2d1b69 100%)"
-            : "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+          bgcolor: "background.default",
           position: "relative",
-          overflow: "hidden",
-          transition: "none", // Disable background transitions
         }}
       >
+        {/* Professional Background Pattern */}
         <Box
           sx={{
             position: "absolute",
@@ -315,10 +348,10 @@ const History = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background:
-              "radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3), transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3), transparent 50%)",
+            backgroundImage: isDarkMode
+              ? "radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.05) 0%, transparent 50%)"
+              : "radial-gradient(circle at 75% 25%, rgba(37, 99, 235, 0.03) 0%, transparent 50%)",
             zIndex: 0,
-            transition: "none",
           }}
         />
 
@@ -339,8 +372,9 @@ const History = () => {
 
         <Container
           maxWidth="xl"
-          sx={{ py: 4, position: "relative", zIndex: 1 }}
+          sx={{ py: 1, position: "relative", zIndex: 1 }}
         >
+
           {history.length > 0 && (
             <HistorySearchBar
               searchQuery={searchQuery}
@@ -381,7 +415,9 @@ const History = () => {
             </Box>
           )}
 
-          {loading ? (
+          {!isAuthenticated ? (
+            <AuthRequired message="Please Log In to Access Your Medical History" />
+          ) : loading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
               <LoadingSpinner message="Loading medical history..." />
             </Box>
@@ -398,29 +434,21 @@ const History = () => {
               />
 
               {totalPages > 1 && (
-                <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-                  <Pagination
-                    count={totalPages}
-                    page={currentPage}
-                    onChange={handlePageChange}
-                    color="primary"
-                    size="large"
-                    sx={{
-                      "& .MuiPaginationItem-root": {
-                        color: "white",
-                        borderColor: "rgba(255, 255, 255, 0.3)",
-                        "&:hover": {
-                          backgroundColor: "rgba(255, 255, 255, 0.1)",
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+                  <Paper elevation={1} sx={{ p: 1, borderRadius: 2 }}>
+                    <Pagination
+                      count={totalPages}
+                      page={currentPage}
+                      onChange={handlePageChange}
+                      color="primary"
+                      size="large"
+                      sx={{
+                        "& .MuiPaginationItem-root": {
+                          fontWeight: 600,
                         },
-                        "&.Mui-selected": {
-                          background:
-                            "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                          color: "white",
-                        },
-                        transition: "none", // Disable pagination transitions
-                      },
-                    }}
-                  />
+                      }}
+                    />
+                  </Paper>
                 </Box>
               )}
             </>

@@ -34,7 +34,7 @@ const HistorySearchBar = ({
   return (
     <GlassCard
       sx={{
-        mb: 3,
+        mb: 1,
         transition: "none",
         transform: "none",
         "&:hover": {
@@ -43,8 +43,8 @@ const HistorySearchBar = ({
         },
       }}
     >
-      <Box sx={{ p: 3 }}>
-        <Grid container spacing={2} alignItems="center">
+      <Box sx={{ p: 1 }}>
+        <Grid container spacing={1} alignItems="center">
           <Grid size={{ xs: 12, md: 5 }}>
             <TextField
               fullWidth
@@ -137,7 +137,7 @@ const HistorySearchBar = ({
               sx={{
                 color: isDarkMode ? "white" : "black",
                 borderColor: isDarkMode ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.2)",
-                height: "56px",
+                height: "36px",
                 position: "relative",
                 "&:hover": {
                   borderColor: isDarkMode ? "rgba(255, 255, 255, 0.3)" : "rgba(0, 0, 0, 0.3)",

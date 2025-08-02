@@ -5,6 +5,7 @@ import {
   IconButton,
   Chip,
   Avatar,
+  Paper,
 } from '@mui/material';
 import {
   History as HistoryIcon,
@@ -16,20 +17,17 @@ import {
 
 const HistoryHeader = ({ onToggleSidebar, recordCount, isDarkMode }) => {
   return (
-    <Box
+    <Paper
+      elevation={1}
       sx={{
         position: "sticky",
         top: 0,
         zIndex: 1100,
-        background: isDarkMode 
-          ? "rgba(255, 255, 255, 0.08)" 
-          : "rgba(255, 255, 255, 0.9)",
-        backdropFilter: "blur(20px)",
-        borderBottom: isDarkMode 
-          ? "1px solid rgba(255, 255, 255, 0.12)" 
-          : "1px solid rgba(0, 0, 0, 0.12)",
+        bgcolor: "background.paper",
+        borderRadius: 0,
+        borderBottom: 1,
+        borderColor: "divider",
         p: 2,
-        transition: "none",
       }}
     >
       <Box
@@ -40,45 +38,58 @@ const HistoryHeader = ({ onToggleSidebar, recordCount, isDarkMode }) => {
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <IconButton onClick={onToggleSidebar} sx={{ color: isDarkMode ? "white" : "black" }}>
+          <IconButton onClick={onToggleSidebar} color="primary">
             <MenuIcon />
           </IconButton>
-          <HistoryIcon sx={{ color: "#00d4ff", fontSize: 28 }} />
-          <Typography variant="h5" sx={{ fontWeight: 700, color: isDarkMode ? "white" : "black" }}>
-            Medical History
-          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 40,
+              height: 40,
+              borderRadius: 2,
+              bgcolor: "primary.main",
+              color: "white",
+            }}
+          >
+            <HistoryIcon />
+          </Box>
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 600, color: "text.primary" }}>
+              Medical History
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Patient medical records and analysis history
+            </Typography>
+          </Box>
           <Chip
             label={`${recordCount} Records`}
+            color="secondary"
             size="small"
-            sx={{
-              background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-              color: "white",
-              fontWeight: 600,
-              transition: "none",
-            }}
+            sx={{ fontWeight: 600 }}
           />
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <IconButton sx={{ color: isDarkMode ? "white" : "black", transition: "none" }}>
+          <IconButton color="primary">
             <Notifications />
           </IconButton>
-          <IconButton sx={{ color: isDarkMode ? "white" : "black", transition: "none" }}>
+          <IconButton color="primary">
             <Settings />
           </IconButton>
           <Avatar
             sx={{
-              width: 32,
-              height: 32,
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              transition: "none",
+              width: 40,
+              height: 40,
+              bgcolor: "primary.main",
             }}
           >
             <Person />
           </Avatar>
         </Box>
       </Box>
-    </Box>
+    </Paper>
   );
 };
 

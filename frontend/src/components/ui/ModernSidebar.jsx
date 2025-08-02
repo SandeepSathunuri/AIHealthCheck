@@ -166,9 +166,11 @@ const ModernSidebar = ({
             <Box
               sx={{
                 height: '100%',
-                background: 'rgba(10, 10, 30, 0.95)',
+                background: isDarkMode 
+                  ? 'rgba(10, 10, 30, 0.95)' 
+                  : 'rgba(255, 255, 255, 0.95)',
                 backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
+                border: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)'}`,
                 borderLeft: 'none',
                 display: 'flex',
                 flexDirection: 'column',
@@ -178,7 +180,7 @@ const ModernSidebar = ({
               <Box
                 sx={{
                   p: 3,
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+                  borderBottom: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)'}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -195,22 +197,22 @@ const ModernSidebar = ({
                     <MedicalServices />
                   </Avatar>
                   <Box>
-                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+                    <Typography variant="h6" sx={{ color: isDarkMode ? 'white' : 'black', fontWeight: 600 }}>
                       Medical AI
                     </Typography>
-                    <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                    <Typography variant="caption" sx={{ color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)' }}>
                       Enterprise Platform
                     </Typography>
                   </Box>
                 </Box>
                 
-                <IconButton onClick={onClose} sx={{ color: 'white' }}>
+                <IconButton onClick={onClose} sx={{ color: isDarkMode ? 'white' : 'black' }}>
                   <Close />
                 </IconButton>
               </Box>
 
               {/* User Profile */}
-              <Box sx={{ p: 3, borderBottom: '1px solid rgba(255, 255, 255, 0.12)' }}>
+              <Box sx={{ p: 3, borderBottom: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)'}` }}>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -227,10 +229,10 @@ const ModernSidebar = ({
                       <Person />
                     </Avatar>
                     <Box>
-                      <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 600 }}>
+                      <Typography variant="subtitle1" sx={{ color: isDarkMode ? 'white' : 'black', fontWeight: 600 }}>
                         {currentUser.name}
                       </Typography>
-                      <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                      <Typography variant="body2" sx={{ color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)' }}>
                         {currentUser.email}
                       </Typography>
                     </Box>
@@ -257,11 +259,13 @@ const ModernSidebar = ({
                             background: isActivePath(item.path) 
                               ? item.gradient 
                               : 'transparent',
-                            color: 'white',
+                            color: isDarkMode ? 'white' : 'black',
                             '&:hover': {
                               background: isActivePath(item.path) 
                                 ? item.gradient 
-                                : 'rgba(255, 255, 255, 0.08)',
+                                : isDarkMode 
+                                  ? 'rgba(255, 255, 255, 0.08)'
+                                  : 'rgba(0, 0, 0, 0.08)',
                             },
                             transition: 'all 0.3s ease',
                             position: 'relative',
@@ -295,12 +299,12 @@ const ModernSidebar = ({
               </Box>
 
               {/* Footer */}
-              <Box sx={{ p: 3, borderTop: '1px solid rgba(255, 255, 255, 0.12)' }}>
+              <Box sx={{ p: 3, borderTop: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)'}` }}>
                 {/* Theme Toggle */}
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <LightMode sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: 20 }} />
-                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                    <LightMode sx={{ color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)', fontSize: 20 }} />
+                    <Typography variant="body2" sx={{ color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)' }}>
                       Dark Mode
                     </Typography>
                   </Box>
@@ -324,8 +328,8 @@ const ModernSidebar = ({
                     <IconButton
                       onClick={() => handleNavigation('/settings')}
                       sx={{
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        '&:hover': { color: 'white' },
+                        color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
+                        '&:hover': { color: isDarkMode ? 'white' : 'black' },
                       }}
                     >
                       <Settings />
@@ -336,7 +340,7 @@ const ModernSidebar = ({
                     <IconButton
                       onClick={onLogout}
                       sx={{
-                        color: 'rgba(255, 255, 255, 0.7)',
+                        color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
                         '&:hover': { color: '#fa709a' },
                       }}
                     >

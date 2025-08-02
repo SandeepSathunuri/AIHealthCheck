@@ -148,21 +148,6 @@ const ProfessionalHeader = ({
               },
             }}
           >
-            <Badge badgeContent={3} color="error">
-              <Notifications />
-            </Badge>
-          </IconButton>
-
-          <IconButton
-            sx={{
-              color: isDarkMode ? "white" : "#64748b",
-              "&:hover": {
-                background: isDarkMode
-                  ? "rgba(255,255,255,0.1)"
-                  : "rgba(0,0,0,0.05)",
-              },
-            }}
-          >
             <Settings />
           </IconButton>
 

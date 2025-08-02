@@ -7,21 +7,17 @@ import {
   Avatar,
   IconButton,
   Chip,
-  Card,
-  CardContent,
   Divider,
-  useMediaQuery,
   CssBaseline,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
-  Button,
   Alert,
   InputAdornment,
-  Badge,
-  LinearProgress,
+  Paper,
+  Stack,
 } from "@mui/material";
 import {
   Person,
@@ -34,17 +30,14 @@ import {
   TrendingUp,
   MedicalServices,
   History as HistoryIcon,
-  AutoAwesome,
   Security,
-  Speed,
   Verified,
   Star,
 } from "@mui/icons-material";
-import { motion, AnimatePresence } from "framer-motion";
 import { ThemeProvider } from "@mui/material/styles";
-import { premiumTheme, premiumLightTheme, premiumGradients, premiumAnimations } from "../styles/premiumTheme";
-import PremiumCard from "../components/ui/PremiumCard";
-import PremiumButton from "../components/ui/PremiumButton";
+import { professionalTheme, professionalDarkTheme } from "../styles/professionalTheme";
+import ProfessionalCard from "../components/ui/ProfessionalCard";
+import ProfessionalButton from "../components/ui/ProfessionalButton";
 import ModernSidebar from "../components/ui/ModernSidebar";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 import { useNavigate } from "react-router-dom";
@@ -52,179 +45,91 @@ import { useAuth } from "../context/AuthContext";
 import { useThemeMode } from "../context/ThemeContext";
 import { API_ENDPOINTS } from "../config/api";
 
-// Modern Header Component
-const ModernHeader = ({ onToggleSidebar, isDarkMode }) => {
+// Professional Header Component
+const ProfessionalHeader = ({ onToggleSidebar, isDarkMode }) => {
   return (
-    <motion.div
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.5 }}
+    <Paper
+      elevation={1}
+      sx={{
+        position: "sticky",
+        top: 0,
+        zIndex: 1100,
+        bgcolor: "background.paper",
+        borderRadius: 0,
+        borderBottom: 1,
+        borderColor: "divider",
+        p: 2,
+      }}
     >
       <Box
         sx={{
-          position: "sticky",
-          top: 0,
-          zIndex: 1100,
-          background: isDarkMode
-            ? "rgba(255, 255, 255, 0.08)"
-            : "rgba(255, 255, 255, 0.9)",
-          backdropFilter: "blur(20px)",
-          borderBottom: isDarkMode
-            ? "1px solid rgba(255, 255, 255, 0.12)"
-            : "1px solid rgba(0, 0, 0, 0.12)",
-          p: 2,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <IconButton
-              onClick={onToggleSidebar}
-              sx={{ color: isDarkMode ? "white" : "black" }}
-            >
-              <Menu />
-            </IconButton>
-            <Person sx={{ color: "#00d4ff", fontSize: 28 }} />
-            <Typography
-              variant="h5"
-              sx={{ fontWeight: 700, color: isDarkMode ? "white" : "black" }}
-            >
-              User Profile
-            </Typography>
-            <Chip
-              label="Account"
-              size="small"
-              sx={{
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                color: "white",
-                fontWeight: 600,
-              }}
-            />
-          </Box>
-
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <IconButton sx={{ color: isDarkMode ? "white" : "black" }}>
-              <Notifications />
-            </IconButton>
-            <IconButton sx={{ color: isDarkMode ? "white" : "black" }}>
-              <Settings />
-            </IconButton>
-          </Box>
-        </Box>
-      </Box>
-    </motion.div>
-  );
-};
-
-// Premium Stats Card with FAANG-level design
-const PremiumStatsCard = ({ icon, title, value, gradient, isDarkMode }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-    whileHover={{ y: -4 }}
-  >
-    <PremiumCard variant="glass" hover glow={false}>
-      <Box sx={{ p: 4, textAlign: "center", position: 'relative' }}>
-        {/* Floating icon with premium styling */}
-        <motion.div
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          transition={{ duration: 0.3 }}
-        >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <IconButton onClick={onToggleSidebar} color="primary">
+            <Menu />
+          </IconButton>
           <Box
             sx={{
-              width: 80,
-              height: 80,
-              borderRadius: "20px",
-              background: gradient,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              mx: "auto",
-              mb: 3,
-              boxShadow: `0 8px 32px ${gradient.includes('4facfe') ? 'rgba(79, 172, 254, 0.4)' : 
-                                      gradient.includes('43e97b') ? 'rgba(67, 233, 123, 0.4)' : 
-                                      'rgba(250, 112, 154, 0.4)'}`,
-              position: 'relative',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: -2,
-                left: -2,
-                right: -2,
-                bottom: -2,
-                background: gradient,
-                borderRadius: '22px',
-                filter: 'blur(10px)',
-                opacity: 0.3,
-                zIndex: -1,
-              }
-            }}
-          >
-            {icon}
-          </Box>
-        </motion.div>
-
-        {/* Animated counter */}
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-        >
-          <Typography
-            variant="h3"
-            sx={{ 
-              color: isDarkMode ? "white" : "black", 
-              fontWeight: 800, 
-              mb: 1,
-              letterSpacing: '-0.02em',
-              background: gradient,
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            {value}
-          </Typography>
-        </motion.div>
-
-        <Typography
-          variant="body1"
-          sx={{
-            color: isDarkMode
-              ? "rgba(255, 255, 255, 0.8)"
-              : "rgba(0, 0, 0, 0.8)",
-            fontWeight: 500,
-            letterSpacing: '0.01em'
-          }}
-        >
-          {title}
-        </Typography>
-
-        {/* Subtle progress indicator */}
-        <Box sx={{ mt: 2 }}>
-          <LinearProgress
-            variant="determinate"
-            value={typeof value === 'string' ? 85 : Math.min(value * 10, 100)}
-            sx={{
-              height: 4,
+              width: 40,
+              height: 40,
               borderRadius: 2,
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              '& .MuiLinearProgress-bar': {
-                background: gradient,
-                borderRadius: 2,
-              },
+              bgcolor: "primary.main",
+              color: "white",
             }}
-          />
+          >
+            <Person />
+          </Box>
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 600, color: "text.primary" }}>
+              User Profile
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Manage your account settings and preferences
+            </Typography>
+          </Box>
+        </Box>
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <IconButton color="primary">
+            <Notifications />
+          </IconButton>
+          <IconButton color="primary">
+            <Settings />
+          </IconButton>
         </Box>
       </Box>
-    </PremiumCard>
-  </motion.div>
+    </Paper>
+  );
+};
+
+// Professional Stats Card
+const ProfessionalStatsCard = ({ icon, title, value, color = "primary" }) => (
+  <ProfessionalCard
+    title={title}
+    icon={icon}
+    sx={{ textAlign: "center", minHeight: 140 }}
+  >
+    <Typography
+      variant="h3"
+      sx={{ 
+        fontWeight: 700, 
+        mb: 1,
+        color: `${color}.main`,
+      }}
+    >
+      {value}
+    </Typography>
+    <Typography variant="body2" color="text.secondary">
+      {title}
+    </Typography>
+  </ProfessionalCard>
 );
 
 const Profile = () => {
@@ -242,7 +147,6 @@ const Profile = () => {
   });
   const navigate = useNavigate();
   const { user, logout, updateUser } = useAuth();
-  const isSmallScreen = useMediaQuery(premiumTheme.breakpoints.down("md"));
 
   // Use dynamic user data from AuthContext with fallback
   const currentUser = user || {
@@ -394,19 +298,16 @@ const Profile = () => {
   };
 
   return (
-    <ThemeProvider theme={isDarkMode ? premiumTheme : premiumLightTheme}>
+    <ThemeProvider theme={isDarkMode ? professionalDarkTheme : professionalTheme}>
       <CssBaseline />
       <Box
         sx={{
           minHeight: "100vh",
-          background: isDarkMode
-            ? "linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)"
-            : "linear-gradient(135deg, #fafbfc 0%, #f1f5f9 50%, #e2e8f0 100%)",
+          bgcolor: "background.default",
           position: "relative",
-          overflow: "hidden",
         }}
       >
-        {/* Animated Background Elements */}
+        {/* Professional Background Pattern */}
         <Box
           sx={{
             position: "absolute",
@@ -414,8 +315,9 @@ const Profile = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background:
-              "radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3), transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3), transparent 50%)",
+            backgroundImage: isDarkMode
+              ? "radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.05) 0%, transparent 50%)"
+              : "radial-gradient(circle at 75% 25%, rgba(37, 99, 235, 0.03) 0%, transparent 50%)",
             zIndex: 0,
           }}
         />
@@ -431,7 +333,7 @@ const Profile = () => {
         />
 
         {/* Header */}
-        <ModernHeader
+        <ProfessionalHeader
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
           isDarkMode={isDarkMode}
         />
@@ -449,312 +351,181 @@ const Profile = () => {
             <Grid container spacing={4}>
               {/* Profile Card */}
               <Grid item xs={12} md={4}>
-                <motion.div
-                  initial={{ opacity: 0, x: -50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6 }}
+                <ProfessionalCard
+                  title="Profile Information"
+                  subtitle="Your account details"
+                  icon={<Person />}
+                  actions={
+                    <ProfessionalButton
+                      size="small"
+                      onClick={handleEditProfile}
+                      icon={<Edit />}
+                      variant="outlined"
+                    >
+                      Edit
+                    </ProfessionalButton>
+                  }
                 >
-                  <PremiumCard variant="glass" glow>
-                    <Box sx={{ p: 5, textAlign: "center", position: 'relative' }}>
-                      {/* Premium Avatar with glow effect */}
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <Badge
-                          overlap="circular"
-                          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                          badgeContent={
-                            <Box
-                              sx={{
-                                width: 32,
-                                height: 32,
-                                borderRadius: '50%',
-                                background: premiumGradients.success,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                border: '3px solid rgba(15, 15, 35, 1)',
-                              }}
-                            >
-                              <Verified sx={{ color: 'white', fontSize: 18 }} />
-                            </Box>
-                          }
-                        >
-                          <Avatar
-                            sx={{
-                              width: 140,
-                              height: 140,
-                              mx: "auto",
-                              mb: 3,
-                              background: premiumGradients.primary,
-                              fontSize: "3.5rem",
-                              border: '4px solid rgba(255, 255, 255, 0.1)',
-                              boxShadow: '0 8px 32px rgba(102, 126, 234, 0.4)',
-                              position: 'relative',
-                              '&::before': {
-                                content: '""',
-                                position: 'absolute',
-                                top: -6,
-                                left: -6,
-                                right: -6,
-                                bottom: -6,
-                                background: premiumGradients.primary,
-                                borderRadius: '50%',
-                                filter: 'blur(20px)',
-                                opacity: 0.3,
-                                zIndex: -1,
-                              }
-                            }}
-                          >
-                            <Person sx={{ fontSize: "3.5rem" }} />
-                          </Avatar>
-                        </Badge>
-                      </motion.div>
+                  <Box sx={{ textAlign: "center", py: 2 }}>
+                    <Avatar
+                      sx={{
+                        width: 100,
+                        height: 100,
+                        mx: "auto",
+                        mb: 2,
+                        bgcolor: "primary.main",
+                        fontSize: "2.5rem",
+                      }}
+                    >
+                      <Person sx={{ fontSize: "2.5rem" }} />
+                    </Avatar>
 
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                      >
-                        <Typography
-                          variant="h3"
-                          sx={{
-                            color: isDarkMode ? "white" : "black",
-                            fontWeight: 800,
-                            mb: 1,
-                            letterSpacing: '-0.02em',
-                          }}
-                        >
-                          {user.name}
-                        </Typography>
+                    <Typography
+                      variant="h5"
+                      sx={{ fontWeight: 600, mb: 1 }}
+                    >
+                      {user.name}
+                    </Typography>
 
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            color: isDarkMode
-                              ? "rgba(255, 255, 255, 0.8)"
-                              : "rgba(0, 0, 0, 0.8)",
-                            mb: 3,
-                            fontWeight: 400,
-                          }}
-                        >
-                          {user.email}
-                        </Typography>
+                    <Typography
+                      variant="body1"
+                      color="text.secondary"
+                      sx={{ mb: 2 }}
+                    >
+                      {user.email}
+                    </Typography>
 
-                        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mb: 4 }}>
-                          <Chip
-                            icon={<CalendarToday />}
-                            label={`Joined ${formatJoinDate(user.joinDate)}`}
-                            sx={{
-                              background: premiumGradients.success,
-                              color: "white",
-                              fontWeight: 600,
-                              '& .MuiChip-icon': { color: 'white' }
-                            }}
-                          />
-                          <Chip
-                            icon={<Star />}
-                            label="Pro Member"
-                            sx={{
-                              background: premiumGradients.warning,
-                              color: "white",
-                              fontWeight: 600,
-                              '& .MuiChip-icon': { color: 'white' }
-                            }}
-                          />
-                        </Box>
-
-                        <Box
-                          sx={{
-                            display: "flex",
-                            gap: 2,
-                            justifyContent: "center",
-                            flexWrap: 'wrap'
-                          }}
-                        >
-                          <PremiumButton
-                            icon={<Edit />}
-                            variant="gradient"
-                            onClick={handleEditProfile}
-                            gradient={premiumGradients.primary}
-                            glow
-                          >
-                            Edit Profile
-                          </PremiumButton>
-                          <PremiumButton
-                            icon={<Settings />}
-                            variant="glass"
-                            onClick={() => console.log("Settings")}
-                          >
-                            Settings
-                          </PremiumButton>
-                        </Box>
-                      </motion.div>
-                    </Box>
-                  </PremiumCard>
-                </motion.div>
+                    <Stack direction="row" spacing={1} justifyContent="center" sx={{ mb: 2 }}>
+                      <Chip
+                        icon={<CalendarToday />}
+                        label={`Joined ${formatJoinDate(user.joinDate)}`}
+                        color="secondary"
+                        size="small"
+                      />
+                      <Chip
+                        icon={<Verified />}
+                        label="Verified"
+                        color="success"
+                        size="small"
+                      />
+                    </Stack>
+                  </Box>
+                </ProfessionalCard>
               </Grid>
 
               {/* Stats Cards */}
               <Grid item xs={12} md={8}>
                 <Grid container spacing={3}>
                   <Grid item xs={12} sm={6} md={4}>
-                    <PremiumStatsCard
-                      icon={
-                        <MedicalServices
-                          sx={{ color: "white", fontSize: 28 }}
-                        />
-                      }
+                    <ProfessionalStatsCard
+                      icon={<MedicalServices />}
                       title="Medical Analyses"
                       value={historyCount}
-                      gradient={premiumGradients.success}
-                      isDarkMode={isDarkMode}
+                      color="primary"
                     />
                   </Grid>
 
                   <Grid item xs={12} sm={6} md={4}>
-                    <PremiumStatsCard
-                      icon={
-                        <HistoryIcon sx={{ color: "white", fontSize: 28 }} />
-                      }
+                    <ProfessionalStatsCard
+                      icon={<HistoryIcon />}
                       title="Total Sessions"
                       value={historyCount}
-                      gradient={premiumGradients.warning}
-                      isDarkMode={isDarkMode}
+                      color="secondary"
                     />
                   </Grid>
 
                   <Grid item xs={12} sm={6} md={4}>
-                    <PremiumStatsCard
-                      icon={
-                        <TrendingUp sx={{ color: "white", fontSize: 28 }} />
-                      }
+                    <ProfessionalStatsCard
+                      icon={<TrendingUp />}
                       title="Health Score"
                       value="85%"
-                      gradient={premiumGradients.error}
-                      isDarkMode={isDarkMode}
+                      color="success"
                     />
                   </Grid>
                 </Grid>
 
                 {/* Account Information */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.3 }}
-                  style={{ marginTop: 24 }}
-                >
-                  <PremiumCard variant="glass">
-                    <Box sx={{ p: 4 }}>
-                      <Typography
-                        variant="h5"
-                        sx={{
-                          color: isDarkMode ? "white" : "black",
-                          fontWeight: 700,
-                          mb: 3,
-                          letterSpacing: '-0.01em',
-                        }}
-                      >
-                        Account Information
-                      </Typography>
-
-                      <Grid container spacing={3}>
-                        <Grid item xs={12} sm={6}>
+                <Box sx={{ mt: 3 }}>
+                  <ProfessionalCard
+                    title="Account Information"
+                    subtitle="Your account details and settings"
+                    icon={<Security />}
+                  >
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} sm={6}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
                           <Box
                             sx={{
                               display: "flex",
                               alignItems: "center",
-                              gap: 2,
-                              mb: 2,
+                              justifyContent: "center",
+                              width: 40,
+                              height: 40,
+                              borderRadius: 2,
+                              bgcolor: "info.main",
+                              color: "white",
                             }}
                           >
-                            <Email sx={{ color: "#00d4ff" }} />
-                            <Box>
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  color: isDarkMode
-                                    ? "rgba(255, 255, 255, 0.7)"
-                                    : "rgba(0, 0, 0, 0.7)",
-                                }}
-                              >
-                                Email Address
-                              </Typography>
-                              <Typography
-                                variant="body1"
-                                sx={{ color: isDarkMode ? "white" : "black" }}
-                              >
-                                {user.email}
-                              </Typography>
-                            </Box>
+                            <Email />
                           </Box>
-                        </Grid>
-
-                        <Grid item xs={12} sm={6}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 2,
-                              mb: 2,
-                            }}
-                          >
-                            <CalendarToday sx={{ color: "#43e97b" }} />
-                            <Box>
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  color: isDarkMode
-                                    ? "rgba(255, 255, 255, 0.7)"
-                                    : "rgba(0, 0, 0, 0.7)",
-                                }}
-                              >
-                                Member Since
-                              </Typography>
-                              <Typography
-                                variant="body1"
-                                sx={{ color: isDarkMode ? "white" : "black" }}
-                              >
-                                {formatJoinDate(user.joinDate)}
-                              </Typography>
-                            </Box>
+                          <Box>
+                            <Typography variant="body2" color="text.secondary">
+                              Email Address
+                            </Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                              {user.email}
+                            </Typography>
                           </Box>
-                        </Grid>
+                        </Box>
                       </Grid>
 
-                      <Divider
-                        sx={{
-                          my: 3,
-                          borderColor: isDarkMode
-                            ? "rgba(255, 255, 255, 0.12)"
-                            : "rgba(0, 0, 0, 0.12)",
-                        }}
-                      />
+                      <Grid item xs={12} sm={6}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: 40,
+                              height: 40,
+                              borderRadius: 2,
+                              bgcolor: "success.main",
+                              color: "white",
+                            }}
+                          >
+                            <CalendarToday />
+                          </Box>
+                          <Box>
+                            <Typography variant="body2" color="text.secondary">
+                              Member Since
+                            </Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                              {formatJoinDate(user.joinDate)}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Grid>
+                    </Grid>
 
-                      <Box
-                        sx={{
-                          display: "flex",
-                          gap: 2,
-                          justifyContent: "flex-end",
-                        }}
+                    <Divider sx={{ my: 3 }} />
+
+                    <Stack direction="row" spacing={2} justifyContent="flex-end">
+                      <ProfessionalButton
+                        variant="outlined"
+                        onClick={() => navigate("/home")}
                       >
-                        <PremiumButton
-                          variant="glass"
-                          onClick={() => navigate("/home")}
-                        >
-                          Back to Home
-                        </PremiumButton>
-                        <PremiumButton
-                          variant="outline"
-                          onClick={handleLogout}
-                        >
-                          Logout
-                        </PremiumButton>
-                      </Box>
-                    </Box>
-                  </PremiumCard>
-                </motion.div>
+                        Back to Home
+                      </ProfessionalButton>
+                      <ProfessionalButton
+                        variant="contained"
+                        color="error"
+                        onClick={handleLogout}
+                      >
+                        Logout
+                      </ProfessionalButton>
+                    </Stack>
+                  </ProfessionalCard>
+                </Box>
               </Grid>
             </Grid>
           )}
@@ -768,26 +539,13 @@ const Profile = () => {
           fullWidth
           PaperProps={{
             sx: {
-              background: isDarkMode
-                ? "rgba(30, 30, 48, 0.95)"
-                : "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(20px)",
-              border: isDarkMode
-                ? "1px solid rgba(255, 255, 255, 0.1)"
-                : "1px solid rgba(0, 0, 0, 0.1)",
+              borderRadius: 2,
             },
           }}
         >
-          <DialogTitle
-            sx={{
-              color: isDarkMode ? "white" : "black",
-              borderBottom: isDarkMode
-                ? "1px solid rgba(255, 255, 255, 0.1)"
-                : "1px solid rgba(0, 0, 0, 0.1)",
-            }}
-          >
+          <DialogTitle>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Edit sx={{ color: "#667eea" }} />
+              <Edit color="primary" />
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 Edit Profile
               </Typography>
@@ -795,35 +553,19 @@ const Profile = () => {
           </DialogTitle>
 
           <DialogContent sx={{ pt: 3 }}>
-            <AnimatePresence>
-              {editError && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Alert severity="error" sx={{ mb: 3 }}>
-                    {editError}
-                  </Alert>
-                </motion.div>
-              )}
+            {editError && (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                {editError}
+              </Alert>
+            )}
 
-              {editSuccess && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Alert severity="success" sx={{ mb: 3 }}>
-                    Profile updated successfully!
-                  </Alert>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {editSuccess && (
+              <Alert severity="success" sx={{ mb: 3 }}>
+                Profile updated successfully!
+              </Alert>
+            )}
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <Stack spacing={3}>
               <TextField
                 fullWidth
                 label="Full Name"
@@ -833,33 +575,9 @@ const Profile = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Person sx={{ color: "rgba(255, 255, 255, 0.5)" }} />
+                      <Person color="action" />
                     </InputAdornment>
                   ),
-                }}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    color: isDarkMode ? "white" : "black",
-                    "& fieldset": {
-                      borderColor: isDarkMode
-                        ? "rgba(255, 255, 255, 0.3)"
-                        : "rgba(0, 0, 0, 0.3)",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#667eea",
-                    },
-                    "&.Mui-focused fieldset": {
-                      borderColor: "#667eea",
-                    },
-                  },
-                  "& .MuiInputLabel-root": {
-                    color: isDarkMode
-                      ? "rgba(255, 255, 255, 0.7)"
-                      : "rgba(0, 0, 0, 0.7)",
-                    "&.Mui-focused": {
-                      color: "#667eea",
-                    },
-                  },
                 }}
               />
 
@@ -873,58 +591,29 @@ const Profile = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Email sx={{ color: "rgba(255, 255, 255, 0.5)" }} />
+                      <Email color="action" />
                     </InputAdornment>
                   ),
                 }}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    color: isDarkMode ? "white" : "black",
-                    "& fieldset": {
-                      borderColor: isDarkMode
-                        ? "rgba(255, 255, 255, 0.3)"
-                        : "rgba(0, 0, 0, 0.3)",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#667eea",
-                    },
-                    "&.Mui-focused fieldset": {
-                      borderColor: "#667eea",
-                    },
-                  },
-                  "& .MuiInputLabel-root": {
-                    color: isDarkMode
-                      ? "rgba(255, 255, 255, 0.7)"
-                      : "rgba(0, 0, 0, 0.7)",
-                    "&.Mui-focused": {
-                      color: "#667eea",
-                    },
-                  },
-                }}
               />
-            </Box>
+            </Stack>
           </DialogContent>
 
-          <DialogActions sx={{ p: 3, gap: 2 }}>
-            <Button
+          <DialogActions sx={{ p: 3, pt: 1 }}>
+            <ProfessionalButton
+              variant="outlined"
               onClick={handleCloseEditDialog}
               disabled={editLoading}
-              sx={{
-                color: isDarkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)",
-              }}
             >
               Cancel
-            </Button>
-            <PremiumButton
+            </ProfessionalButton>
+            <ProfessionalButton
+              variant="contained"
               onClick={handleSaveProfile}
               loading={editLoading}
-              success={editSuccess}
-              gradient={premiumGradients.primary}
-              disabled={editLoading}
-              glow
             >
-              {editLoading ? "Saving..." : "Save Changes"}
-            </PremiumButton>
+              Save Changes
+            </ProfessionalButton>
           </DialogActions>
         </Dialog>
       </Box>

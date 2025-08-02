@@ -17,12 +17,11 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { ThemeProvider } from "@mui/material/styles";
 import {
-  premiumTheme,
-  premiumLightTheme,
-  premiumGradients,
-} from "../styles/premiumTheme";
-import PremiumCard from "../components/ui/PremiumCard";
-import PremiumButton from "../components/ui/PremiumButton";
+  professionalTheme,
+  professionalDarkTheme,
+} from "../styles/professionalTheme";
+import ProfessionalCard from "../components/ui/ProfessionalCard";
+import ProfessionalButton from "../components/ui/ProfessionalButton";
 import ModernSidebar from "../components/ui/ModernSidebar";
 import ProfessionalHeader from "../components/ui/ProfessionalHeader";
 
@@ -179,18 +178,16 @@ const Home = () => {
   };
 
   return (
-    <ThemeProvider theme={isDarkMode ? premiumTheme : premiumLightTheme}>
+    <ThemeProvider theme={isDarkMode ? professionalDarkTheme : professionalTheme}>
       <CssBaseline />
       <Box
         sx={{
           minHeight: "100vh",
-          background: isDarkMode
-            ? "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)"
-            : "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%)",
+          bgcolor: "background.default",
           position: "relative",
         }}
       >
-        {/* Subtle Background Pattern */}
+        {/* Professional Background Pattern */}
         <Box
           sx={{
             position: "absolute",
@@ -199,8 +196,8 @@ const Home = () => {
             right: 0,
             bottom: 0,
             backgroundImage: isDarkMode
-              ? "radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.1) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(16, 185, 129, 0.1) 0%, transparent 50%)"
-              : "radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.05) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(16, 185, 129, 0.05) 0%, transparent 50%)",
+              ? "radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.05) 0%, transparent 50%)"
+              : "radial-gradient(circle at 75% 25%, rgba(37, 99, 235, 0.03) 0%, transparent 50%)",
             zIndex: 0,
           }}
         />
@@ -228,11 +225,12 @@ const Home = () => {
           maxWidth="xl"
           sx={{ 
             pt: 0.5, 
-            pb: 1, 
+            pb: 0.5, 
             position: "relative", 
             zIndex: 1,
             width: "100%",
             maxWidth: "1400px !important",
+            px: { xs: 1, sm: 2 },
           }}
         >
           {/* Edit Mode Indicator */}
@@ -264,8 +262,8 @@ const Home = () => {
             sx={{
               display: "flex",
               flexDirection: { xs: "column", sm: "row" },
-              gap: 1.5,
-              height: "calc(100vh - 100px)",
+              gap: 1,
+              height: "calc(100vh - 80px)",
               width: "100%",
             }}
           >
@@ -280,156 +278,40 @@ const Home = () => {
                 height: "100%",
               }}
             >
-              <Stack spacing={1} sx={{ height: "100%" }}>
+              <Stack spacing={0.5} sx={{ height: "100%" }}>
                 {/* Audio Recording Section */}
-                <motion.div
-                  initial={{ opacity: 0, x: -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6 }}
+                <ProfessionalCard
+                  title="Voice Input"
+                  subtitle="Describe your symptoms clearly"
+                  icon={<Mic />}
+                  status={audioBlob ? "Recorded" : "Ready"}
+                  statusColor={audioBlob ? "success" : "default"}
+                  sx={{ minHeight: "200px" }}
                 >
-                  <PremiumCard
-                    variant="glass"
-                    padding={1.5}
-                    glow={audioBlob ? true : false}
-                    gradient={audioBlob ? premiumGradients.success : undefined}
-                    sx={{ flex: 1 }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          width: 28,
-                          height: 28,
-                          borderRadius: "6px",
-                          background:
-                            "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
-                          mr: 1,
-                        }}
-                      >
-                        <Mic sx={{ color: "white", fontSize: 16 }} />
-                      </Box>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 600,
-                            color: isDarkMode ? "white" : "#1e293b",
-                            mb: 0.1,
-                            fontSize: "0.9rem",
-                          }}
-                        >
-                          Voice Input
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: isDarkMode
-                              ? "rgba(255,255,255,0.7)"
-                              : "#64748b",
-                            fontSize: "0.7rem",
-                          }}
-                        >
-                          Describe symptoms
-                        </Typography>
-                      </Box>
-                      {audioBlob && (
-                        <Chip
-                          label="Recorded"
-                          size="small"
-                          sx={{
-                            background:
-                              "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                            color: "white",
-                            fontWeight: 600,
-                          }}
-                        />
-                      )}
-                    </Box>
-                    <AudioRecordingSection
-                      onRecordingComplete={handleAudioRecording}
-                      disabled={loading}
-                    />
-                  </PremiumCard>
-                </motion.div>
+                  <AudioRecordingSection
+                    onRecordingComplete={handleAudioRecording}
+                    disabled={loading}
+                  />
+                </ProfessionalCard>
 
                 {/* Image Upload Section */}
-                <motion.div
-                  initial={{ opacity: 0, x: -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: 0.2 }}
+                <ProfessionalCard
+                  title="Medical Image"
+                  subtitle="Upload X-ray, scan, or photo"
+                  icon={<PhotoCamera />}
+                  status={image ? "Uploaded" : "Ready"}
+                  statusColor={image ? "success" : "default"}
+                  sx={{ minHeight: "200px" }}
                 >
-                  <PremiumCard
-                    variant="glass"
-                    padding={1.5}
-                    glow={image ? true : false}
-                    gradient={image ? premiumGradients.primary : undefined}
-                    sx={{ flex: 1 }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          width: 28,
-                          height: 28,
-                          borderRadius: "6px",
-                          background:
-                            "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                          mr: 1,
-                        }}
-                      >
-                        <PhotoCamera sx={{ color: "white", fontSize: 16 }} />
-                      </Box>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 600,
-                            color: isDarkMode ? "white" : "#1e293b",
-                            mb: 0.1,
-                            fontSize: "0.9rem",
-                          }}
-                        >
-                          Medical Image
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: isDarkMode
-                              ? "rgba(255,255,255,0.7)"
-                              : "#64748b",
-                            fontSize: "0.7rem",
-                          }}
-                        >
-                          Upload image
-                        </Typography>
-                      </Box>
-                      {image && (
-                        <Chip
-                          label="Uploaded"
-                          size="small"
-                          sx={{
-                            background:
-                              "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                            color: "white",
-                            fontWeight: 600,
-                          }}
-                        />
-                      )}
-                    </Box>
-                    <SmartImageUploader
-                      onImageSelect={(file) => {
-                        console.log("Image selected:", file);
-                        handleImageUpload(file);
-                      }}
-                      disabled={loading}
-                      initialFile={image}
-                    />
-                  </PremiumCard>
-                </motion.div>
+                  <SmartImageUploader
+                    onImageSelect={(file) => {
+                      console.log("Image selected:", file);
+                      handleImageUpload(file);
+                    }}
+                    disabled={loading}
+                    initialFile={image}
+                  />
+                </ProfessionalCard>
 
                 {/* Analysis Button */}
                 <AnimatePresence>
@@ -440,43 +322,30 @@ const Home = () => {
                       exit={{ opacity: 0, y: 30, scale: 0.9 }}
                       transition={{ duration: 0.5, type: "spring" }}
                     >
-                      <PremiumCard
-                        variant="gradient"
-                        padding={1.5}
-                        glow
-                        gradient="linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)"
-                      >
-                        <Box sx={{ textAlign: "center" }}>
-                          <PremiumButton
-                            size="small"
-                            onClick={handleAnalyzeClick}
-                            loading={loading}
-                            gradient="linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)"
-                            glow
-                            icon={<LocalHospital />}
-                            fullWidth
-                            sx={{ py: 1 }}
-                          >
-                            {loading
-                              ? "Analyzing..."
-                              : isEditMode
-                              ? "Update"
-                              : "Analyze"}
-                          </PremiumButton>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              display: "block",
-                              mt: 0.5,
-                              color: "rgba(255, 255, 255, 0.9)",
-                              fontWeight: 500,
-                              fontSize: "0.65rem",
-                            }}
-                          >
-                            AI medical insights
-                          </Typography>
-                        </Box>
-                      </PremiumCard>
+                      <Box sx={{ textAlign: "center", py: 2 }}>
+                        <ProfessionalButton
+                          size="large"
+                          onClick={handleAnalyzeClick}
+                          loading={loading}
+                          icon={<LocalHospital />}
+                          fullWidth
+                          color="primary"
+                          variant="contained"
+                        >
+                          {loading
+                            ? "Analyzing..."
+                            : isEditMode
+                            ? "Update Analysis"
+                            : "Start AI Analysis"}
+                        </ProfessionalButton>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mt: 1 }}
+                        >
+                          Advanced AI medical insights powered by machine learning
+                        </Typography>
+                      </Box>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -494,117 +363,26 @@ const Home = () => {
                 height: "100%",
               }}
             >
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                style={{
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                }}
+              <ProfessionalCard
+                title="AI Medical Analysis"
+                subtitle="Professional diagnostic insights"
+                icon={<Analytics />}
+                status={doctorResponse && (typeof doctorResponse === 'object' ? doctorResponse.detailed_analysis : doctorResponse) ? "Complete" : "Waiting"}
+                statusColor={doctorResponse && (typeof doctorResponse === 'object' ? doctorResponse.detailed_analysis : doctorResponse) ? "success" : "default"}
+                sx={{ height: "100%" }}
+                contentSx={{ p: 1, overflow: "auto" }}
               >
-                <PremiumCard
-                  variant="glass"
-                  padding={0}
-                  sx={{ height: "100%" }}
-                  glow={doctorResponse && (typeof doctorResponse === 'object' ? doctorResponse.detailed_analysis : doctorResponse) ? true : false}
-                  gradient={
-                    doctorResponse && (typeof doctorResponse === 'object' ? doctorResponse.detailed_analysis : doctorResponse) ? premiumGradients.success : undefined
-                  }
-                >
-                  <Box
-                    sx={{
-                      p: 1.5,
-                      borderBottom: isDarkMode
-                        ? "1px solid rgba(255, 255, 255, 0.1)"
-                        : "1px solid rgba(0, 0, 0, 0.1)",
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            width: 28,
-                            height: 28,
-                            borderRadius: "6px",
-                            background:
-                              "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
-                            mr: 1,
-                          }}
-                        >
-                          <Analytics sx={{ color: "white", fontSize: 16 }} />
-                        </Box>
-                        <Box>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontWeight: 600,
-                              color: isDarkMode ? "white" : "#1e293b",
-                              mb: 0.1,
-                              fontSize: "0.9rem",
-                            }}
-                          >
-                            AI Medical Analysis
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: isDarkMode
-                                ? "rgba(255,255,255,0.7)"
-                                : "#64748b",
-                              fontSize: "0.7rem",
-                            }}
-                          >
-                            Professional insights
-                          </Typography>
-                        </Box>
-                      </Box>
-                      {doctorResponse && (typeof doctorResponse === 'object' ? doctorResponse.detailed_analysis : doctorResponse) && (
-                        <Chip
-                          label="Done"
-                          size="small"
-                          sx={{
-                            background:
-                              "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                            color: "white",
-                            fontWeight: 600,
-                            fontSize: "0.65rem",
-                            height: "20px",
-                          }}
-                        />
-                      )}
-                    </Box>
-                  </Box>
-                  <Box
-                    sx={{
-                      p: 1.5,
-                      height: "calc(100% - 65px)",
-                      overflow: "auto",
-                    }}
-                  >
-                    <ResultsPanel
-                      key={`${typeof doctorResponse === 'object' ? (doctorResponse?.detailed_analysis?.length || 0) + (doctorResponse?.recommendations?.length || 0) : (doctorResponse?.length || 0)}-${
-                        transcriptionDisplay?.length || 0
-                      }`}
-                      transcription={transcriptionDisplay}
-                      doctorResponse={doctorResponse}
-                      audioUrl={audioUrl}
-                      loading={loading}
-                      isDarkMode={isDarkMode}
-                    />
-                  </Box>
-                </PremiumCard>
-              </motion.div>
+                <ResultsPanel
+                  key={`${typeof doctorResponse === 'object' ? (doctorResponse?.detailed_analysis?.length || 0) + (doctorResponse?.recommendations?.length || 0) : (doctorResponse?.length || 0)}-${
+                    transcriptionDisplay?.length || 0
+                  }`}
+                  transcription={transcriptionDisplay}
+                  doctorResponse={doctorResponse}
+                  audioUrl={audioUrl}
+                  loading={loading}
+                  isDarkMode={isDarkMode}
+                />
+              </ProfessionalCard>
             </Box>
           </Box>
         </Container>

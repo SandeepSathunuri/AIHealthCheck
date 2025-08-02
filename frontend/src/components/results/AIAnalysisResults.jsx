@@ -5,32 +5,25 @@ import {
   Card,
   CardContent,
   IconButton,
-  Chip,
-  Divider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   LinearProgress,
   Tooltip,
-  Button,
-  Avatar,
+  Alert,
+  Stack,
 } from "@mui/material";
 import {
-  VolumeUp,
-  VolumeOff,
   PlayArrow,
   Pause,
   Download,
   Share,
-  ExpandMore,
   Psychology,
   RecordVoiceOver,
   Assessment,
-  MedicalServices,
   CheckCircle,
+  Info,
+  Warning,
 } from "@mui/icons-material";
 import { motion, AnimatePresence } from "framer-motion";
-import GlassCard from "../ui/GlassCard";
+import ProfessionalButton from "../ui/ProfessionalButton";
 
 const AIAnalysisResults = ({
   transcription,
@@ -55,7 +48,6 @@ const AIAnalysisResults = ({
   console.log('AIAnalysisResults - aiResponse type:', typeof aiResponse);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentAudio, setCurrentAudio] = useState(null);
-  const [expandedSection, setExpandedSection] = useState("analysis");
 
   // Debug logging
   console.log('AIAnalysisResults received aiResponse:', aiResponse);
@@ -114,520 +106,221 @@ const AIAnalysisResults = ({
 
   if (isLoading) {
     return (
-      <Box sx={{ textAlign: "center", py: 6 }}>
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-        >
-          <Box
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 80,
-              height: 80,
-              borderRadius: "50%",
-              background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
-              mb: 3,
-              boxShadow: "0 8px 32px rgba(59, 130, 246, 0.3)",
-            }}
-          >
-            <Psychology sx={{ fontSize: 40, color: "white" }} />
-          </Box>
-        </motion.div>
-        <Typography
-          variant="h5"
-          sx={{ 
-            color: isDarkMode ? "white" : "#1e293b", 
-            mb: 2,
-            fontWeight: 600,
-          }}
-        >
-          AI Medical Analysis in Progress
-        </Typography>
-        <Typography
-          variant="body1"
+      <Box sx={{ textAlign: "center", py: 4 }}>
+        <Box
           sx={{
-            color: isDarkMode ? "rgba(255,255,255,0.7)" : "#64748b",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 64,
+            height: 64,
+            borderRadius: "50%",
+            bgcolor: "primary.main",
             mb: 3,
-            maxWidth: 400,
-            mx: "auto",
+            animation: "pulse 2s infinite",
+            "@keyframes pulse": {
+              "0%": { transform: "scale(1)", opacity: 1 },
+              "50%": { transform: "scale(1.05)", opacity: 0.8 },
+              "100%": { transform: "scale(1)", opacity: 1 },
+            },
           }}
         >
-          Our advanced AI is carefully analyzing your medical data to provide accurate insights and recommendations.
+          <Psychology sx={{ fontSize: 32, color: "white" }} />
+        </Box>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+          AI Analysis in Progress
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 400, mx: "auto" }}>
+          Our advanced AI is analyzing your medical data to provide accurate insights and recommendations.
         </Typography>
         <LinearProgress
           sx={{
             maxWidth: 300,
             mx: "auto",
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
-            "& .MuiLinearProgress-bar": {
-              background: "linear-gradient(90deg, #3b82f6 0%, #10b981 100%)",
-              borderRadius: 4,
-            },
+            height: 6,
+            borderRadius: 3,
+            bgcolor: "action.hover",
           }}
         />
-        <Typography
-          variant="caption"
-          sx={{
-            display: "block",
-            mt: 2,
-            color: isDarkMode ? "rgba(255,255,255,0.5)" : "#94a3b8",
-          }}
-        >
-          This may take a few seconds...
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 2 }}>
+          This may take a few moments...
         </Typography>
       </Box>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-    >
-      <GlassCard>
-        <Box sx={{ p: 3 }}>
-          {/* Header */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              mb: 3,
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Avatar
-                sx={{
-                  background:
-                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  width: 48,
-                  height: 48,
-                }}
-              >
-                <MedicalServices />
-              </Avatar>
-              <Box>
-                <Typography
-                  variant="h5"
-                  sx={{
-                    color: isDarkMode ? "white" : "black",
-                    fontWeight: 600,
-                    mb: 0.5,
-                  }}
-                >
-                  AI Medical Analysis
-                </Typography>
-              </Box>
-            </Box>
+    <Box sx={{ height: "100%" }}>
+      {/* Action Buttons */}
+      <Box sx={{ display: "flex", gap: 1, mb: 2, justifyContent: "flex-end" }}>
+        <Tooltip title="Download Report">
+          <IconButton onClick={onDownload} size="small" color="primary">
+            <Download />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Share Results">
+          <IconButton onClick={onShare} size="small" color="primary">
+            <Share />
+          </IconButton>
+        </Tooltip>
+      </Box>
 
-            <Box sx={{ display: "flex", gap: 1 }}>
-              <Tooltip title="Download Report">
-                <IconButton onClick={onDownload} sx={{ color: "#43e97b" }}>
-                  <Download />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Share Results">
-                <IconButton onClick={onShare} sx={{ color: "#00d4ff" }}>
-                  <Share />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </Box>
-
-          <Divider
-            sx={{
-              mb: 3,
-              borderColor: isDarkMode
-                ? "rgba(255,255,255,0.1)"
-                : "rgba(0,0,0,0.1)",
-            }}
-          />
-
-          {/* Voice Transcription Section */}
-          <Accordion
-            expanded={expandedSection === "transcription"}
-            onChange={() =>
-              setExpandedSection(
-                expandedSection === "transcription" ? "" : "transcription"
-              )
-            }
-            sx={{
-              mb: 2,
-              background: isDarkMode
-                ? "rgba(255,255,255,0.05)"
-                : "rgba(0,0,0,0.05)",
-              "&:before": { display: "none" },
-            }}
-          >
-            <AccordionSummary
-              expandIcon={
-                <ExpandMore sx={{ color: isDarkMode ? "white" : "black" }} />
-              }
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2,
-                  width: "100%",
-                }}
-              >
-                <RecordVoiceOver sx={{ color: "#43e97b" }} />
-                <Box sx={{ flex: 1 }}>
-                  <Typography
-                    variant="h6"
-                    sx={{ color: isDarkMode ? "white" : "black" }}
-                  >
-                    Voice Input Transcription
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: isDarkMode
-                        ? "rgba(255,255,255,0.7)"
-                        : "rgba(0,0,0,0.7)",
-                    }}
-                  >
-                    Your spoken symptoms and concerns
-                  </Typography>
-                </Box>
-                {audioUrl ? (
-                  <Tooltip title={isPlaying ? "Pause Audio" : "Play Audio"}>
-                    <IconButton
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handlePlayAudio();
-                      }}
-                      sx={{ color: isPlaying ? "#fa709a" : "#43e97b" }}
-                    >
-                      {isPlaying ? <Pause /> : <PlayArrow />}
-                    </IconButton>
-                  </Tooltip>
-                ) : (
-                  <Tooltip title="Audio not available in demo mode">
-                    <IconButton disabled sx={{ color: "#666" }}>
-                      <VolumeOff />
-                    </IconButton>
-                  </Tooltip>
-                )}
-              </Box>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Card
-                sx={{
-                  background: isDarkMode
-                    ? "rgba(0,0,0,0.2)"
-                    : "rgba(255,255,255,0.8)",
-                  border: `1px solid ${
-                    isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"
-                  }`,
-                }}
-              >
-                <CardContent>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: isDarkMode ? "white" : "black",
-                      lineHeight: 1.6,
-                      fontStyle: transcription ? "normal" : "italic",
-                    }}
-                  >
-                    {transcription || "No voice input recorded"}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </AccordionDetails>
-          </Accordion>
-
-          {/* Detailed Analysis Section */}
-          <Accordion
-            expanded={expandedSection === "analysis"}
-            onChange={() =>
-              setExpandedSection(
-                expandedSection === "analysis" ? "" : "analysis"
-              )
-            }
-            sx={{
-              mb: 2,
-              background: isDarkMode
-                ? "rgba(255,255,255,0.05)"
-                : "rgba(0,0,0,0.05)",
-              "&:before": { display: "none" },
-            }}
-          >
-            <AccordionSummary
-              expandIcon={
-                <ExpandMore sx={{ color: isDarkMode ? "white" : "black" }} />
-              }
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Psychology sx={{ color: "#00d4ff" }} />
-                <Box>
-                  <Typography
-                    variant="h6"
-                    sx={{ color: isDarkMode ? "white" : "black" }}
-                  >
-                    Detailed Analysis
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: isDarkMode
-                        ? "rgba(255,255,255,0.7)"
-                        : "rgba(0,0,0,0.7)",
-                    }}
-                  >
-                    AI medical diagnosis (spoken by AI voice)
-                  </Typography>
-                </Box>
-              </Box>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Card
-                sx={{
-                  background: isDarkMode
-                    ? "rgba(0,0,0,0.2)"
-                    : "rgba(255,255,255,0.8)",
-                  border: `1px solid ${
-                    isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"
-                  }`,
-                }}
-              >
-                <CardContent>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: isDarkMode ? "white" : "black",
-                      lineHeight: 1.6,
-                      whiteSpace: "pre-line",
-                      fontStyle: detailedAnalysis ? "normal" : "italic",
-                    }}
-                  >
-                    {detailedAnalysis || (
-                      <Box sx={{ textAlign: "center", py: 4 }}>
-                        <Box
-                          sx={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            width: 64,
-                            height: 64,
-                            borderRadius: "50%",
-                            background: isDarkMode 
-                              ? "rgba(255,255,255,0.05)" 
-                              : "rgba(0,0,0,0.05)",
-                            mb: 2,
-                          }}
-                        >
-                          <Assessment sx={{ 
-                            fontSize: 32, 
-                            color: isDarkMode 
-                              ? "rgba(255,255,255,0.3)" 
-                              : "rgba(0,0,0,0.3)" 
-                          }} />
-                        </Box>
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            color: isDarkMode ? "rgba(255,255,255,0.7)" : "#64748b",
-                            mb: 1,
-                            fontWeight: 600,
-                          }}
-                        >
-                          Ready for Analysis
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: isDarkMode ? "rgba(255,255,255,0.5)" : "#94a3b8",
-                            maxWidth: 300,
-                            mx: "auto",
-                          }}
-                        >
-                          Upload a medical image and record your voice to get started with AI-powered medical analysis.
-                        </Typography>
-                      </Box>
-                    )}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </AccordionDetails>
-          </Accordion>
-
-          {/* Recommendations Section */}
-          <Accordion
-            expanded={expandedSection === "recommendations"}
-            onChange={() =>
-              setExpandedSection(
-                expandedSection === "recommendations" ? "" : "recommendations"
-              )
-            }
-            sx={{
-              mb: 2,
-              background: isDarkMode
-                ? "rgba(255,255,255,0.05)"
-                : "rgba(0,0,0,0.05)",
-              "&:before": { display: "none" },
-            }}
-          >
-            <AccordionSummary
-              expandIcon={
-                <ExpandMore sx={{ color: isDarkMode ? "white" : "black" }} />
-              }
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <CheckCircle sx={{ color: "#43e97b" }} />
-                <Box>
-                  <Typography
-                    variant="h6"
-                    sx={{ color: isDarkMode ? "white" : "black" }}
-                  >
-                    Recommendations
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: isDarkMode
-                        ? "rgba(255,255,255,0.7)"
-                        : "rgba(0,0,0,0.7)",
-                    }}
-                  >
-                    Comprehensive treatment and care recommendations
-                  </Typography>
-                </Box>
-              </Box>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Card
-                sx={{
-                  background:
-                    "linear-gradient(135deg, rgba(67,233,123,0.1) 0%, rgba(56,249,215,0.1) 100%)",
-                  border: `1px solid ${
-                    isDarkMode
-                      ? "rgba(67,233,123,0.3)"
-                      : "rgba(67,233,123,0.2)"
-                  }`,
-                }}
-              >
-                <CardContent>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: isDarkMode ? "white" : "black",
-                      lineHeight: 1.6,
-                      whiteSpace: "pre-line",
-                      fontStyle: recommendations ? "normal" : "italic",
-                    }}
-                  >
-                    {recommendations || (
-                      <Box sx={{ textAlign: "center", py: 4 }}>
-                        <Box
-                          sx={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            width: 64,
-                            height: 64,
-                            borderRadius: "50%",
-                            background: isDarkMode 
-                              ? "rgba(255,255,255,0.05)" 
-                              : "rgba(0,0,0,0.05)",
-                            mb: 2,
-                          }}
-                        >
-                          <CheckCircle sx={{ 
-                            fontSize: 32, 
-                            color: isDarkMode 
-                              ? "rgba(255,255,255,0.3)" 
-                              : "rgba(0,0,0,0.3)" 
-                          }} />
-                        </Box>
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            color: isDarkMode ? "rgba(255,255,255,0.7)" : "#64748b",
-                            mb: 1,
-                            fontWeight: 600,
-                          }}
-                        >
-                          Recommendations Available After Analysis
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: isDarkMode ? "rgba(255,255,255,0.5)" : "#94a3b8",
-                            maxWidth: 300,
-                            mx: "auto",
-                          }}
-                        >
-                          Detailed treatment recommendations and care instructions will appear here after analysis.
-                        </Typography>
-                      </Box>
-                    )}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </AccordionDetails>
-          </Accordion>
-
-          {/* Action Buttons */}
-          <Box
-            sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 3 }}
-          >
-            <Button
-              variant="outlined"
-              onClick={onRetry}
-              startIcon={<Psychology />}
+      {/* Voice Transcription Section */}
+      <Card sx={{ mb: 2 }}>
+        <CardContent sx={{ p: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+            <Box
               sx={{
-                borderColor: isDarkMode ? "#8b5cf6" : "#3b82f6",
-                color: isDarkMode ? "#8b5cf6" : "#3b82f6",
-                fontWeight: 600,
-                borderRadius: "12px",
-                px: 3,
-                py: 1.5,
-                "&:hover": {
-                  borderColor: isDarkMode ? "#7c3aed" : "#1d4ed8",
-                  background: isDarkMode 
-                    ? "rgba(139, 92, 246, 0.1)" 
-                    : "rgba(59, 130, 246, 0.1)",
-                  transform: "translateY(-2px)",
-                },
-                transition: "all 0.3s ease",
-              }}
-            >
-              New Analysis
-            </Button>
-            <Button
-              variant="contained"
-              onClick={() => (window.location.href = "/history")}
-              startIcon={<Assessment />}
-              sx={{
-                background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 40,
+                height: 40,
+                borderRadius: 2,
+                bgcolor: "info.main",
                 color: "white",
-                fontWeight: 600,
-                borderRadius: "12px",
-                px: 3,
-                py: 1.5,
-                boxShadow: "0 4px 15px rgba(16, 185, 129, 0.3)",
-                "&:hover": {
-                  background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
-                  transform: "translateY(-2px)",
-                  boxShadow: "0 8px 25px rgba(16, 185, 129, 0.4)",
-                },
-                transition: "all 0.3s ease",
               }}
             >
-              View History
-            </Button>
+              <RecordVoiceOver />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                Voice Input
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Your spoken symptoms and concerns
+              </Typography>
+            </Box>
+            {audioUrl && (
+              <Tooltip title={isPlaying ? "Pause Audio" : "Play Audio"}>
+                <IconButton
+                  onClick={handlePlayAudio}
+                  color={isPlaying ? "error" : "success"}
+                >
+                  {isPlaying ? <Pause /> : <PlayArrow />}
+                </IconButton>
+              </Tooltip>
+            )}
           </Box>
-        </Box>
-      </GlassCard>
-    </motion.div>
+          <Alert
+            severity={transcription ? "info" : "warning"}
+            icon={transcription ? <Info /> : <Warning />}
+            sx={{ bgcolor: "background.paper" }}
+          >
+            <Typography variant="body2">
+              {transcription || "No voice input recorded"}
+            </Typography>
+          </Alert>
+        </CardContent>
+      </Card>
+
+
+      {/* Detailed Analysis Section */}
+      <Card sx={{ mb: 2 }}>
+        <CardContent sx={{ p: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 40,
+                height: 40,
+                borderRadius: 2,
+                bgcolor: "primary.main",
+                color: "white",
+              }}
+            >
+              <Psychology />
+            </Box>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                AI Analysis
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Detailed medical assessment
+              </Typography>
+            </Box>
+          </Box>
+          {detailedAnalysis ? (
+            <Alert severity="info" sx={{ bgcolor: "background.paper" }}>
+              <Typography variant="body2" sx={{ whiteSpace: "pre-line" }}>
+                {detailedAnalysis}
+              </Typography>
+            </Alert>
+          ) : (
+            <Alert severity="warning" icon={<Warning />}>
+              <Typography variant="body2">
+                Complete voice input and image upload to receive AI analysis
+              </Typography>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Recommendations Section */}
+      <Card sx={{ mb: 2 }}>
+        <CardContent sx={{ p: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 40,
+                height: 40,
+                borderRadius: 2,
+                bgcolor: "success.main",
+                color: "white",
+              }}
+            >
+              <CheckCircle />
+            </Box>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                Recommendations
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Treatment and care guidance
+              </Typography>
+            </Box>
+          </Box>
+          {recommendations ? (
+            <Alert severity="success" sx={{ bgcolor: "background.paper" }}>
+              <Typography variant="body2" sx={{ whiteSpace: "pre-line" }}>
+                {recommendations}
+              </Typography>
+            </Alert>
+          ) : (
+            <Alert severity="info" icon={<Info />}>
+              <Typography variant="body2">
+                Recommendations will appear after AI analysis is complete
+              </Typography>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+      {/* Action Buttons */}
+      <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+        <ProfessionalButton
+          variant="outlined"
+          onClick={onRetry}
+          icon={<Psychology />}
+          fullWidth
+        >
+          New Analysis
+        </ProfessionalButton>
+        <ProfessionalButton
+          variant="contained"
+          onClick={() => (window.location.href = "/history")}
+          icon={<Assessment />}
+          color="secondary"
+          fullWidth
+        >
+          View History
+        </ProfessionalButton>
+      </Stack>
+    </Box>
   );
 };
 
