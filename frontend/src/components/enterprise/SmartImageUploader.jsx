@@ -591,18 +591,7 @@ const CameraCapture = ({ onCapture, onClose }) => {
           Switch Camera ({availableCameras.length > 1 ? `${currentCameraIndex + 1}/${availableCameras.length}` : facingMode === 'user' ? 'Front' : 'Back'})
         </Button>
         
-        <Button 
-          onClick={() => {
-            console.log('🔴 Manual emergency stop triggered');
-            stopCurrentStream();
-            nuclearStopAllMedia();
-            handleClose();
-          }}
-          color="error"
-          variant="outlined"
-        >
-          Force Stop
-        </Button>
+
         
         <Button
           onClick={handleCapture}
@@ -877,18 +866,7 @@ const SmartImageUploader = ({ onImageSelect, disabled = false, initialFile = nul
                 Use Camera
               </Button>
               
-              <Button
-                variant="outlined"
-                color="error"
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleForceStopCamera();
-                }}
-                sx={{ fontSize: '0.75rem' }}
-              >
-                🔴 Force Stop Camera
-              </Button>
+
             </Box>
           </motion.div>
           
@@ -915,22 +893,13 @@ const SmartImageUploader = ({ onImageSelect, disabled = false, initialFile = nul
         </Alert>
       )}
       
-      {/* Camera Status Indicator */}
+      {/* Camera Status Indicator - Clean version without buttons */}
       {cameraStatus === 'active' && (
         <Alert 
-          severity="warning" 
+          severity="info" 
           sx={{ mt: 2 }}
-          action={
-            <Button 
-              color="inherit" 
-              size="small" 
-              onClick={handleForceStopCamera}
-            >
-              FORCE STOP
-            </Button>
-          }
         >
-          🔴 Camera is still active! Use Ctrl+Shift+S or click FORCE STOP to turn it off.
+          📷 Camera is active. It will automatically turn off when you close the camera dialog.
         </Alert>
       )}
       
