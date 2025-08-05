@@ -2,10 +2,6 @@
 
 A production-ready AI-powered medical consultation platform with advanced features including real-time voice analysis, medical image processing, and comprehensive monitoring.
 
-## 🎥 Demo Videos
-
-https://github.com/user-attachments/assets/421377b0-75b6-4db8-9ecf-36104cc07364
-
 *Watch the complete demo showcasing voice input, medical image analysis, AI diagnosis, and text-to-speech response generation.*
 
 https://github.com/user-attachments/assets/703c1f72-4a22-40ac-a6a4-2f44b5ca1497
